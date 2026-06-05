@@ -5,288 +5,1166 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CEVA Millington — Training Records (Operations View)</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 :root {
-  --navy: #00204E; --navy-light: #002f6c; --red: #C8102E;
-  --white: #ffffff; --gray-50: #f8f9fb; --gray-100: #f0f2f5;
-  --gray-200: #e2e6ea; --gray-300: #ced4da; --gray-400: #adb5bd;
-  --gray-500: #6c757d; --gray-600: #495057; --gray-700: #343a40;
-  --gray-800: #212529; --green: #1a7a3c; --green-light: #e8f5ee;
-  --orange: #e07b00; --orange-light: #fff3e0; --yellow: #c49a00;
-  --yellow-light: #fffde7; --red-light-bg: #fdecea;
-  --sidebar-width: 220px;
+  --navy: #00204E;
+  --navy-light: #002f6c;
+  --navy-dark: #00152f;
+  --red: #C8102E;
+  --red-light: #e8132f;
+  --white: #ffffff;
+  --gray-50: #f8f9fb;
+  --gray-100: #f0f2f5;
+  --gray-200: #e2e6ea;
+  --gray-300: #ced4da;
+  --gray-400: #adb5bd;
+  --gray-500: #6c757d;
+  --gray-600: #495057;
+  --gray-700: #343a40;
+  --gray-800: #212529;
+  --green: #1a7a3c;
+  --green-light: #e8f5ee;
+  --orange: #e07b00;
+  --orange-light: #fff3e0;
+  --yellow: #c49a00;
+  --yellow-light: #fffde7;
+  --red-light-bg: #fdecea;
+  --sidebar-width: 240px;
+  --header-height: 64px;
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Barlow',sans-serif; background:var(--gray-100); color:var(--gray-800); display:flex; min-height:100vh; }
 
-#ops-bar { background:var(--orange); color:white; text-align:center; padding:6px; font-size:12px; font-weight:700; letter-spacing:0.5px; position:fixed; top:0; left:0; right:0; z-index:999; }
-body { padding-top:32px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-#sidebar { width:var(--sidebar-width); background:var(--navy); display:flex; flex-direction:column; position:fixed; top:32px; left:0; bottom:0; z-index:100; overflow-y:auto; }
-.sidebar-logo { padding:16px 18px 14px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; }
-.sidebar-logo img { height:34px; width:auto; max-width:170px; filter:brightness(0) invert(1); display:block; }
-.sidebar-site { padding:8px 18px 12px; border-bottom:1px solid rgba(255,255,255,0.1); }
-.sidebar-site label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); display:block; margin-bottom:4px; }
-.sidebar-site select { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:white; font-family:'Barlow',sans-serif; font-size:13px; padding:5px 8px; border-radius:4px; width:100%; }
-.sidebar-site select option { background:var(--navy); }
-.nav-section { padding:10px 0 4px; }
-.nav-section-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.35); padding:0 18px 6px; font-family:'Barlow Condensed',sans-serif; }
-.nav-item { display:flex; align-items:center; gap:10px; padding:9px 18px; color:rgba(255,255,255,0.7); cursor:pointer; font-size:13px; font-weight:500; transition:all 0.15s; border-left:3px solid transparent; }
-.nav-item:hover { background:rgba(255,255,255,0.07); color:white; }
-.nav-item.active { background:rgba(255,255,255,0.1); color:white; border-left-color:var(--red); }
-.nav-item svg { width:15px; height:15px; flex-shrink:0; }
-.sidebar-footer { margin-top:auto; padding:12px 18px; border-top:1px solid rgba(255,255,255,0.1); font-size:11px; color:rgba(255,255,255,0.35); }
+body {
+  font-family: 'Barlow', sans-serif;
+  background: var(--gray-100);
+  color: var(--gray-800);
+  display: flex;
+  min-height: 100vh;
+}
 
-#main { margin-left:var(--sidebar-width); flex:1; display:flex; flex-direction:column; }
-#topbar { height:60px; background:white; border-bottom:1px solid var(--gray-200); display:flex; align-items:center; justify-content:space-between; padding:0 24px; position:sticky; top:32px; z-index:50; }
-.topbar-title { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:600; color:var(--navy); }
-.topbar-role { background:var(--orange); color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:3px; letter-spacing:0.5px; text-transform:uppercase; font-family:'Barlow Condensed',sans-serif; }
+/* SIDEBAR */
+#sidebar {
+  width: var(--sidebar-width);
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  overflow-y: auto;
+}
 
-#content { padding:24px; flex:1; }
-.page { display:none; }
-.page.active { display:block; }
-.page-header { margin-bottom:22px; }
-.page-header h1 { font-family:'Barlow Condensed',sans-serif; font-size:24px; font-weight:600; color:var(--navy); }
-.page-header p { font-size:13px; color:var(--gray-500); margin-top:2px; }
+.sidebar-logo {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
-.kpi-card { background:white; border-radius:8px; border:1px solid var(--gray-200); padding:14px 18px; }
-.kpi-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:var(--gray-500); margin-bottom:5px; }
-.kpi-value { font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:700; color:var(--navy); line-height:1; }
-.kpi-sub { font-size:11px; color:var(--gray-500); margin-top:3px; }
+.sidebar-logo img {
+  height: 36px;
+  width: auto;
+  max-width: 180px;
+  filter: brightness(0) invert(1);
+  display: block;
+}
 
-.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-.card { background:white; border-radius:8px; border:1px solid var(--gray-200); padding:18px 22px; }
-.card-title { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:600; color:var(--navy); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
-.table-wrap { overflow-x:auto; }
-table { width:100%; border-collapse:collapse; font-size:13px; }
-thead th { background:var(--gray-50); padding:9px 12px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px; color:var(--gray-500); border-bottom:1px solid var(--gray-200); white-space:nowrap; }
-tbody td { padding:10px 12px; border-bottom:1px solid var(--gray-100); vertical-align:middle; color:var(--gray-700); }
-tbody tr:hover { background:var(--gray-50); }
-tbody tr:last-child td { border-bottom:none; }
+.sidebar-site {
+  padding: 10px 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
 
-.badge { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:3px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
-.badge-green { background:var(--green-light); color:var(--green); }
-.badge-red { background:var(--red-light-bg); color:#9b1221; }
-.badge-orange { background:var(--orange-light); color:var(--orange); }
-.badge-yellow { background:var(--yellow-light); color:var(--yellow); }
-.badge-navy { background:#e8eef5; color:var(--navy); }
-.badge-gray { background:var(--gray-100); color:var(--gray-600); }
+.sidebar-site label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.4);
+  display: block;
+  margin-bottom: 4px;
+}
 
-.filter-bar { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
-.filter-bar input, .filter-bar select { padding:6px 10px; border:1.5px solid var(--gray-300); border-radius:5px; font-family:'Barlow',sans-serif; font-size:13px; color:var(--gray-700); background:white; }
-.filter-bar input:focus, .filter-bar select:focus { outline:none; border-color:var(--navy); }
-.filter-bar input { min-width:200px; }
+.sidebar-site select {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: white;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  width: 100%;
+  cursor: pointer;
+}
 
-.pit-band { padding:10px 12px; border-radius:6px; margin-bottom:6px; }
-.pit-band-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px; }
-.pit-band-name { font-size:13px; font-weight:500; }
-.pit-band-days { font-size:11px; margin-top:1px; opacity:0.75; }
-.band-critical { background:#fdecea; border-left:4px solid #c0392b; }
-.band-critical .pit-band-label { color:#9b1221; }
-.band-urgent { background:#fff3e0; border-left:4px solid #e07b00; }
-.band-urgent .pit-band-label { color:var(--orange); }
-.band-warning { background:#fffde7; border-left:4px solid #c49a00; }
-.band-warning .pit-band-label { color:var(--yellow); }
-.band-notice { background:#e3ecf7; border-left:4px solid var(--navy); }
-.band-notice .pit-band-label { color:var(--navy); }
+.sidebar-site select option { background: var(--navy); }
 
-.empty-state { text-align:center; padding:32px 20px; color:var(--gray-400); font-size:13px; }
-.tabs { display:flex; gap:0; border-bottom:2px solid var(--gray-200); margin-bottom:18px; }
-.tab-btn { padding:7px 16px; font-family:'Barlow',sans-serif; font-size:13px; font-weight:600; color:var(--gray-500); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; margin-bottom:-2px; transition:all 0.15s; }
-.tab-btn.active { color:var(--navy); border-bottom-color:var(--red); }
-.tab-btn:hover:not(.active) { color:var(--gray-700); }
+.nav-section {
+  padding: 12px 0 4px;
+}
 
-::-webkit-scrollbar { width:5px; height:5px; }
-::-webkit-scrollbar-thumb { background:var(--gray-300); border-radius:3px; }
+.nav-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.35);
+  padding: 0 20px 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+}
+
+.nav-item:hover { background: rgba(255,255,255,0.07); color: white; }
+
+.nav-item.active {
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border-left-color: var(--red);
+}
+
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; }
+.nav-item.active svg { opacity: 1; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+}
+
+/* MAIN */
+#main {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+#topbar {
+  height: var(--header-height);
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--navy);
+  letter-spacing: 0.3px;
+}
+
+.topbar-role {
+  background: var(--navy);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+#content {
+  padding: 28px;
+  flex: 1;
+}
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; }
+
+/* PAGE HEADER */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.page-header p {
+  font-size: 13.5px;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+
+/* BUTTONS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.btn-primary { background: var(--navy); color: white; }
+.btn-primary:hover { background: var(--navy-light); }
+.btn-red { background: var(--red); color: white; }
+.btn-red:hover { background: var(--red-light); }
+.btn-outline { background: white; color: var(--navy); border: 1.5px solid var(--navy); }
+.btn-outline:hover { background: var(--gray-50); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-ghost { background: transparent; color: var(--gray-600); border: 1px solid var(--gray-300); }
+.btn-ghost:hover { background: var(--gray-100); }
+.btn svg { width: 15px; height: 15px; }
+
+/* CARDS */
+.card {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  padding: 20px 24px;
+}
+
+.card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* KPI CARDS */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+
+.kpi-card {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  padding: 16px 20px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--gray-500);
+  margin-bottom: 6px;
+}
+
+.kpi-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+}
+
+.kpi-sub { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+/* GRID LAYOUTS */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+/* TABLES */
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+thead th {
+  background: var(--gray-50);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--gray-500);
+  border-bottom: 1px solid var(--gray-200);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--gray-100);
+  vertical-align: middle;
+  color: var(--gray-700);
+}
+
+tbody tr:hover { background: var(--gray-50); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* BADGES */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-red { background: var(--red-light-bg); color: #9b1221; }
+.badge-orange { background: var(--orange-light); color: var(--orange); }
+.badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+.badge-navy { background: #e8eef5; color: var(--navy); }
+.badge-gray { background: var(--gray-100); color: var(--gray-600); }
+
+/* FORMS */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.form-full { grid-column: 1 / -1; }
+
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 9px 12px;
+  border: 1.5px solid var(--gray-300);
+  border-radius: 5px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13.5px;
+  color: var(--gray-800);
+  background: white;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--navy);
+}
+
+.form-group textarea { resize: vertical; min-height: 80px; }
+
+.form-group .required { color: var(--red); margin-left: 2px; }
+
+/* RADIO/CHECKBOX GROUP */
+.radio-group { display: flex; gap: 16px; flex-wrap: wrap; }
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.radio-option input[type="radio"],
+.radio-option input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--navy);
+  cursor: pointer;
+}
+
+/* PASS/FAIL ROW */
+.eval-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.eval-row:last-child { border-bottom: none; }
+
+.eval-label { font-size: 13.5px; font-weight: 500; color: var(--gray-700); }
+
+.pf-group { display: flex; gap: 10px; }
+
+.pf-btn {
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid var(--gray-300);
+  background: white;
+  color: var(--gray-500);
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pf-btn.pass-selected { background: var(--green-light); border-color: var(--green); color: var(--green); }
+.pf-btn.fail-selected { background: var(--red-light-bg); border-color: #9b1221; color: #9b1221; }
+.pf-btn:hover { border-color: var(--gray-500); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,47,0.45);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: white;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,60,0.25);
+  transform: translateY(20px);
+  transition: transform 0.2s;
+}
+
+.modal-overlay.open .modal { transform: translateY(0); }
+
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 5;
+}
+
+.modal-header h2 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.modal-close {
+  width: 30px; height: 30px;
+  background: var(--gray-100);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--gray-500);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.modal-close:hover { background: var(--gray-200); color: var(--gray-800); }
+
+.modal-body { padding: 20px 24px; }
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  position: sticky;
+  bottom: 0;
+  background: white;
+}
+
+/* SECTION DIVIDER */
+.section-divider {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--navy);
+  padding: 10px 0 6px;
+  margin: 14px 0 6px;
+  border-bottom: 2px solid var(--navy);
+}
+
+/* PIT EXPIRATION URGENCY BANDS */
+.pit-band {
+  padding: 12px 14px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pit-band-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.pit-band-name { font-size: 13.5px; font-weight: 500; }
+.pit-band-days { font-size: 12px; margin-top: 1px; opacity: 0.75; }
+
+.band-critical { background: #fdecea; border-left: 4px solid #c0392b; }
+.band-critical .pit-band-label { color: #9b1221; }
+.band-urgent { background: #fff3e0; border-left: 4px solid #e07b00; }
+.band-urgent .pit-band-label { color: var(--orange); }
+.band-warning { background: #fffde7; border-left: 4px solid #c49a00; }
+.band-warning .pit-band-label { color: var(--yellow); }
+.band-notice { background: #e3ecf7; border-left: 4px solid var(--navy); }
+.band-notice .pit-band-label { color: var(--navy); }
+
+/* CALENDAR */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--gray-200);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cal-header-cell {
+  background: var(--navy);
+  color: white;
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.cal-cell {
+  background: white;
+  min-height: 100px;
+  padding: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+  position: relative;
+}
+
+.cal-cell:hover { background: var(--gray-50); }
+
+.cal-cell.other-month .cal-day { color: var(--gray-400); }
+.cal-cell.today { background: #f0f5ff; }
+.cal-cell.today .cal-day { color: var(--navy); font-weight: 700; }
+
+.cal-day { font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 3px; }
+
+.cal-event {
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 2px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.cal-event.pit { background: #e8eef5; color: var(--navy); }
+.cal-event.process { background: var(--green-light); color: var(--green); }
+
+/* TABS */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--gray-200); margin-bottom: 20px; }
+
+.tab-btn {
+  padding: 8px 18px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--gray-500);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+}
+
+.tab-btn.active { color: var(--navy); border-bottom-color: var(--red); }
+.tab-btn:hover:not(.active) { color: var(--gray-700); }
+
+/* SEARCH/FILTER BAR */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-bar input,
+.filter-bar select {
+  padding: 7px 12px;
+  border: 1.5px solid var(--gray-300);
+  border-radius: 5px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  color: var(--gray-700);
+  background: white;
+}
+
+.filter-bar input:focus,
+.filter-bar select:focus { outline: none; border-color: var(--navy); }
+
+.filter-bar input { min-width: 220px; }
+
+/* TOAST */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--gray-800);
+  color: white;
+  padding: 12px 18px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  z-index: 999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+}
+
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.success { border-left: 4px solid #1a7a3c; }
+#toast.error { border-left: 4px solid var(--red); }
+
+/* ALERT BANNER */
+.alert {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.alert-warning { background: var(--orange-light); color: #8a4a00; border-left: 3px solid var(--orange); }
+.alert-info { background: #e8eef5; color: var(--navy); border-left: 3px solid var(--navy); }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+
+
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--gray-400);
+}
+
+.empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; }
+.empty-state p { font-size: 14px; }
+
+/* ACTION ICONS */
+.action-btns { display: flex; gap: 6px; }
+
+.icon-btn {
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--gray-200);
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  color: var(--gray-500);
+}
+
+.icon-btn:hover { background: var(--gray-100); color: var(--gray-700); }
+.icon-btn.danger:hover { background: var(--red-light-bg); color: var(--red); border-color: #e8a0a8; }
+.icon-btn svg { width: 14px; height: 14px; }
+
+/* OVERVIEW SUMMARY STRIP */
+.summary-strip {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.strip-item {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.strip-item-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.strip-item-label { font-size: 12px; color: var(--gray-500); font-weight: 500; }
 </style>
 </head>
 <body>
 
-<div id="ops-bar">⚠ OPERATIONS VIEW — Read Only. Contact a Trainer to make changes to training records.</div>
 
+<!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="sidebar-logo">
     <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png" alt="CEVA Logistics">
   </div>
+
   <div class="sidebar-site">
-    <label>Site</label>
-    <select id="siteFilter" onchange="renderAll()">
-      <option value="Millington">Millington</option>
+    <label>Active Site</label>
+    <select id="siteSelect" onchange="changeSite(this.value)">
+      <option value="Millington">Millington, TN</option>
     </select>
   </div>
+
   <div class="nav-section">
     <div class="nav-section-label">Overview</div>
     <div class="nav-item active" onclick="showPage('dashboard')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       Dashboard
     </div>
+    <div class="nav-item" onclick="showPage('regional')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Regional Overview
+    </div>
+    <div class="nav-item" onclick="showPage('calendar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Training Schedule
+    </div>
   </div>
+
   <div class="nav-section">
     <div class="nav-section-label">PIT Training</div>
     <div class="nav-item" onclick="showPage('pit-overview')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l1-5h12l1 5"/><rect x="3" y="8" width="18" height="8" rx="1"/><path d="M6 16v4"/><path d="M18 16v4"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l1-5h12l1 5"/><path d="M2 12h20"/><path d="M6 16v4"/><path d="M18 16v4"/><rect x="3" y="8" width="18" height="8" rx="1"/></svg>
       PIT Overview
     </div>
     <div class="nav-item" onclick="showPage('pit-records')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       PIT Records
     </div>
   </div>
+
   <div class="nav-section">
     <div class="nav-section-label">Process Training</div>
     <div class="nav-item" onclick="showPage('process-records')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Process Records
     </div>
   </div>
+
   <div class="nav-section">
-    <div class="nav-section-label">Schedule</div>
-    <div class="nav-item" onclick="showPage('schedule')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      Upcoming Training
+    <div class="nav-section-label">Trainee Lookup</div>
+    <div class="nav-item" onclick="showPage('trainee-search')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Trainee History
     </div>
   </div>
-  <div class="sidebar-footer">CEVA Logistics · Operations View</div>
+
+  <div class="sidebar-footer">
+    CEVA Logistics · Operations View
+  </div>
 </nav>
 
+<!-- MAIN -->
 <div id="main">
   <div id="topbar">
     <div class="topbar-title" id="topbarTitle">Dashboard</div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span style="font-size:12px;color:var(--gray-500)" id="topbarDate"></span>
-      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--gray-500);background:var(--gray-100);padding:4px 10px;border-radius:20px" title="Firebase connection status">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:13px;color:var(--gray-500)" id="topbarDate"></span>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--gray-500);background:var(--gray-100);padding:4px 10px;border-radius:20px;" title="Firebase connection status">
         <span id="fbDot" style="width:7px;height:7px;border-radius:50%;background:#adb5bd;display:inline-block;flex-shrink:0"></span>
-        <span>Live Sync</span>
+        <span id="fbLabel">Connecting…</span>
       </div>
-      <span class="topbar-role">Operations</span>
+      <span class="topbar-role" id="roleLabel">Operations</span>
     </div>
   </div>
 
   <div id="content">
 
-    <!-- DASHBOARD -->
+    <!-- ===== DASHBOARD ===== -->
     <div id="page-dashboard" class="page active">
       <div class="page-header">
-        <h1>Training Dashboard</h1>
-        <p>Live training status for <span id="siteLabel">Millington</span></p>
+        <div>
+          <h1>Training Dashboard</h1>
+          <p>Overview of training activity across <span class="site-name-label">Millington</span></p>
+        </div>
+              </div>
+
+      <div class="kpi-grid" id="dashKpis">
+        <div class="kpi-card">
+          <div class="kpi-label">Total PIT Operators</div>
+          <div class="kpi-value" id="kpi-pit-total">—</div>
+          <div class="kpi-sub">Active licenses on file</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Expiring ≤ 90 Days</div>
+          <div class="kpi-value" id="kpi-pit-expiring" style="color:var(--red)">—</div>
+          <div class="kpi-sub">PIT licenses requiring action</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Process Records (YTD)</div>
+          <div class="kpi-value" id="kpi-process-ytd">—</div>
+          <div class="kpi-sub">Training sessions logged</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Scheduled This Month</div>
+          <div class="kpi-value" id="kpi-scheduled">—</div>
+          <div class="kpi-sub">Upcoming training events</div>
+        </div>
       </div>
-      <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-label">PIT Operators</div><div class="kpi-value" id="k-pit">—</div><div class="kpi-sub">Active certifications</div></div>
-        <div class="kpi-card"><div class="kpi-label">Expiring ≤ 90 Days</div><div class="kpi-value" id="k-exp" style="color:var(--red)">—</div><div class="kpi-sub">Licenses requiring action</div></div>
-        <div class="kpi-card"><div class="kpi-label">Process Records (YTD)</div><div class="kpi-value" id="k-proc">—</div><div class="kpi-sub">Sessions logged this year</div></div>
-        <div class="kpi-card"><div class="kpi-label">Scheduled (30 Days)</div><div class="kpi-value" id="k-sched">—</div><div class="kpi-sub">Upcoming training events</div></div>
-      </div>
+
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">⚠ PIT Expirations</div>
-          <div id="dash-alerts"></div>
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            PIT Expirations — Action Required
+          </div>
+          <div id="dash-pit-alerts">
+            <div class="empty-state" style="padding:24px">
+              <p>No expiration alerts at this time.</p>
+            </div>
+          </div>
         </div>
         <div class="card">
-          <div class="card-title">Upcoming Training Sessions</div>
-          <div id="dash-upcoming"></div>
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Upcoming Scheduled Training
+          </div>
+          <div id="dash-upcoming">
+            <div class="empty-state" style="padding:24px">
+              <p>No upcoming training sessions scheduled.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px">
+        <div class="card">
+          <div class="card-title">Recent Training Records</div>
+          <div class="table-wrap">
+            <table id="dashRecentTable">
+              <thead><tr>
+                <th>Trainee</th><th>Type</th><th>Topic / Equipment</th><th>Result</th><th>Evaluator</th><th>Date</th>
+              </tr></thead>
+              <tbody id="dashRecentBody">
+                <tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:28px">No records yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- PIT OVERVIEW -->
+    <!-- ===== REGIONAL OVERVIEW ===== -->
+    <div id="page-regional" class="page">
+      <div class="page-header">
+        <div>
+          <h1>Regional Overview</h1>
+          <p>High-level training snapshot across all active sites</p>
+        </div>
+      </div>
+      <div id="regionalGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;"></div>
+    </div>
+
+    <!-- ===== CALENDAR ===== -->
+    <div id="page-calendar" class="page">
+      <div class="page-header">
+        <div>
+          <h1>Training Schedule</h1>
+          <p>Plan and view training sessions by site</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <select class="filter-bar" style="padding:7px 12px;border:1.5px solid var(--gray-300);border-radius:5px;font-family:'Barlow',sans-serif;font-size:13px" id="calSiteFilter" onchange="renderCalendar()">
+            <option value="all">All Sites</option>
+            <option value="Millington">Millington</option>
+          </select>
+          <button class="btn btn-ghost" onclick="changeMonth(-1)">← Prev</button>
+          <strong id="calMonthLabel" style="min-width:140px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:18px;color:var(--navy)"></strong>
+          <button class="btn btn-ghost" onclick="changeMonth(1)">Next →</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="calendar-grid" id="calGrid"></div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:12px;font-size:12px;font-weight:600;color:var(--gray-500)">
+        <span><span style="display:inline-block;width:12px;height:12px;background:#e8eef5;border-radius:2px;margin-right:5px;vertical-align:middle;border:1px solid #c0cfe0"></span>PIT Training</span>
+        <span><span style="display:inline-block;width:12px;height:12px;background:var(--green-light);border-radius:2px;margin-right:5px;vertical-align:middle;border:1px solid #a8d5bc"></span>Process Training</span>
+      </div>
+    </div>
+
+    <!-- ===== PIT OVERVIEW ===== -->
     <div id="page-pit-overview" class="page">
       <div class="page-header">
-        <h1>PIT Operator Overview</h1>
-        <p>License expiration status for all certified operators</p>
+        <div>
+          <h1>PIT Operator Overview</h1>
+          <p>License status and expiration tracking for all certified operators</p>
+        </div>
       </div>
-      <div class="grid-2">
+
+      <div class="summary-strip" id="pitSummaryStrip"></div>
+
+      <div class="grid-2" style="margin-bottom:20px">
         <div class="card">
-          <div class="card-title" style="color:var(--red)">Expiring Within 90 Days</div>
-          <div id="pit-alert-list"></div>
+          <div class="card-title" style="color:var(--red)">⚠ Expiring Within 90 Days</div>
+          <div id="pitAlertList"></div>
         </div>
         <div class="card">
           <div class="card-title">All Active Operators</div>
-          <div class="filter-bar">
-            <input type="text" placeholder="Search operator…" oninput="filterPitOv(this.value)">
+          <div class="filter-bar" style="margin-bottom:12px">
+            <input type="text" placeholder="Search operator…" oninput="filterPitOverview(this.value)" id="pitOverviewSearch">
           </div>
           <div class="table-wrap">
-            <table><thead><tr><th>Operator</th><th>Equipment</th><th>Expiry</th><th>Status</th></tr></thead>
-            <tbody id="pit-ov-body"></tbody></table>
+            <table>
+              <thead><tr><th>Operator</th><th>Equipment</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="pitOverviewBody"></tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- PIT RECORDS -->
+    <!-- ===== PIT RECORDS ===== -->
     <div id="page-pit-records" class="page">
       <div class="page-header">
-        <h1>PIT Training Records</h1>
-        <p>All powered industrial truck certifications on file</p>
+        <div><h1>PIT Training Records</h1><p>All powered industrial truck certifications on file</p></div>
       </div>
-      <div class="card" style="margin-bottom:14px">
+      <div class="card" style="margin-bottom:16px">
         <div class="filter-bar" style="margin-bottom:0">
-          <input type="text" placeholder="Search name, equipment…" id="pit-search" oninput="renderPitRecords()">
-          <select id="pit-result-filter" onchange="renderPitRecords()">
+          <input type="text" placeholder="Search by name, equipment…" id="pitRecordsSearch" oninput="filterPitRecords()">
+          <select id="pitRecordsResult" onchange="filterPitRecords()">
             <option value="">All Results</option>
-            <option value="Completed">Completed</option>
+            <option value="Pass">Pass</option>
+            <option value="Fail">Fail</option>
             <option value="Incomplete">Incomplete</option>
+          </select>
+          <select id="pitRecordsSite" onchange="filterPitRecords()">
+            <option value="">All Sites</option>
+            <option value="Millington">Millington</option>
           </select>
         </div>
       </div>
       <div class="card">
         <div class="table-wrap">
-          <table><thead><tr>
-            <th>Trainee</th><th>Position</th><th>Equipment</th><th>Classroom</th><th>Hands-On</th><th>OJE</th><th>Overall</th><th>Evaluator</th><th>Cert Date</th><th>Expiry</th><th>Recertification</th>
-          </tr></thead>
-          <tbody id="pit-rec-body"></tbody></table>
+          <table>
+            <thead><tr>
+              <th>Trainee</th><th>Position</th><th>Equipment</th><th>Classroom</th><th>Hands-On</th><th>OJE</th><th>Overall</th><th>Evaluator</th><th>Cert Date</th><th>Expiry</th><th>Recertification</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="pitRecordsBody">
+              <tr><td colspan="11" style="text-align:center;color:var(--gray-400);padding:28px">No PIT records yet. Add one above.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- PROCESS RECORDS -->
+    <!-- ===== PROCESS RECORDS ===== -->
     <div id="page-process-records" class="page">
       <div class="page-header">
-        <h1>Process Training Records</h1>
-        <p>All warehouse process training completions on file</p>
+        <div><h1>Process Training Records</h1><p>All warehouse process training completions on file</p></div>
       </div>
-      <div class="card" style="margin-bottom:14px">
+      <div class="card" style="margin-bottom:16px">
         <div class="filter-bar" style="margin-bottom:0">
-          <input type="text" placeholder="Search name, process…" id="proc-search" oninput="renderProcRecords()">
-          <select id="proc-result-filter" onchange="renderProcRecords()">
+          <input type="text" placeholder="Search by name, process…" id="processSearch" oninput="filterProcessRecords()">
+          <select id="processResultFilter" onchange="filterProcessRecords()">
             <option value="">All Results</option>
             <option value="Completed">Completed</option>
             <option value="Incomplete">Incomplete</option>
+          </select>
+          <select id="processSiteFilter" onchange="filterProcessRecords()">
+            <option value="">All Sites</option>
+            <option value="Millington">Millington</option>
           </select>
         </div>
       </div>
       <div class="card">
         <div class="table-wrap">
-          <table><thead><tr>
-            <th>Trainee</th><th>Position</th><th>Process</th><th>Result</th><th>Evaluator</th><th>Date Certified</th>
-          </tr></thead>
-          <tbody id="proc-rec-body"></tbody></table>
+          <table>
+            <thead><tr>
+              <th>Trainee</th><th>Position</th><th>Process</th><th>Result</th><th>Evaluator</th><th>Date Certified</th><th>Comments</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="processRecordsBody">
+              <tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:28px">No process records yet.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- SCHEDULE -->
-    <div id="page-schedule" class="page">
+    <!-- ===== TRAINEE HISTORY ===== -->
+    <div id="page-trainee-search" class="page">
       <div class="page-header">
-        <h1>Upcoming Training Sessions</h1>
-        <p>Scheduled training for the next 90 days — contact a Trainer to make changes</p>
+        <div><h1>Trainee History</h1><p>Search for any employee to view their complete PIT and process training history</p></div>
       </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table><thead><tr><th>Date</th><th>Time</th><th>Title</th><th>Type</th><th>Site</th><th>Trainer</th><th>Notes</th></tr></thead>
-          <tbody id="sched-body"></tbody></table>
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div style="position:relative;flex:1;min-width:240px">
+            <input type="text" id="traineeSearchInput" placeholder="Type a name to search…" oninput="searchTrainee(this.value)"
+              style="width:100%;padding:10px 14px 10px 38px;border:1.5px solid var(--gray-300);border-radius:6px;font-family:'Barlow',sans-serif;font-size:14px">
+            <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:0.4;pointer-events:none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div id="traineeMatchList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
         </div>
+      </div>
+
+      <div id="traineeHistoryPanel" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div id="traineeHistoryName" style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;color:var(--navy)"></div>
+            <div id="traineeHistoryMeta" style="font-size:13px;color:var(--gray-500);margin-top:2px"></div>
+          </div>
+                  </div>
+
+        <!-- Summary strip -->
+        <div id="traineeHistorySummary" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap"></div>
+
+        <!-- PIT Records for this person -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><path d="M5 8l1-5h12l1 5"/><rect x="3" y="8" width="18" height="8" rx="1"/><path d="M6 16v4"/><path d="M18 16v4"/></svg>
+            PIT Training Records
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Equipment</th><th>Classroom</th><th>Hands-On</th><th>OJE</th><th>Result</th><th>Evaluator</th><th>Cert Date</th><th>Expiry</th><th>Recertification</th><th>Actions</th></tr></thead>
+              <tbody id="traineeHistoryPitBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Process Records for this person -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Process Training Records
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Process</th><th>Result</th><th>Evaluator</th><th>Date Certified</th><th>Comments</th><th>Actions</th></tr></thead>
+              <tbody id="traineeHistoryProcBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="traineeHistoryEmpty" style="text-align:center;padding:60px 20px;color:var(--gray-400)">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:14px;opacity:0.3"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <p style="font-size:15px;font-weight:500">Search for a trainee above to view their full training history</p>
       </div>
     </div>
 
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- View Record Modal -->
+<div class="modal-overlay" id="modal-view-record">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <h2 id="viewRecordTitle">Training Record</h2>
+      <button class="modal-close" onclick="closeModal('modal-view-record')">✕</button>
+    </div>
+    <div class="modal-body" id="viewRecordBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-view-record')">Close</button>
+    </div>
   </div>
 </div>
 
+<!-- Event Detail Modal -->
+<div class="modal-overlay" id="modal-event-detail">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h2 id="eventDetailTitle">Training Session</h2>
+      <button class="modal-close" onclick="closeModal('modal-event-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="eventDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-event-detail')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
 <script>
 // ===================================================
-// FIREBASE — Operations (Read-Only)
+// FIREBASE CONFIGURATION
 // ===================================================
 const firebaseConfig = {
   apiKey: "AIzaSyD-xCtjk2g-AVhH4jgJVrXseG8iwNo9uoQ",
@@ -297,233 +1175,1458 @@ const firebaseConfig = {
   messagingSenderId: "594818231743",
   appId: "1:594818231743:web:41e9576084a99627f7050a",
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// ===================================================
+// DATA STORE — Firebase-backed, localStorage cache
+// ===================================================
+
+// localStorage cache (instant reads on load, replaced by Firebase sync)
 const Cache = {
-  get:(k,d)=>{ try{const v=localStorage.getItem('lms_'+k);return v?JSON.parse(v):d;}catch(e){return d;} },
-  set:(k,v)=>{ try{localStorage.setItem('lms_'+k,JSON.stringify(v));}catch(e){} },
+  get: (key, def) => { try { const v = localStorage.getItem('lms_'+key); return v ? JSON.parse(v) : def; } catch(e) { return def; } },
+  set: (key, val) => { try { localStorage.setItem('lms_'+key, JSON.stringify(val)); } catch(e) {} },
 };
 
-let pitRecords=Cache.get('pit',[]);
-let processRecords=Cache.get('process',[]);
-let scheduleEvents=Cache.get('schedule',[]);
+let pitRecords     = Cache.get('pit', []);
+let processRecords = Cache.get('process', []);
+let scheduleEvents = Cache.get('schedule', []);
+let equipment      = Cache.get('equipment', [
+  {id:'e1', name:'Sit-Down Counterbalance Forklift', category:'Forklift', active:true},
+  {id:'e2', name:'Stand-Up Reach Truck', category:'Reach Truck', active:true},
+  {id:'e3', name:'Order Picker', category:'Order Picker', active:true},
+  {id:'e4', name:'Electric Pallet Jack', category:'Pallet Jack', active:true},
+  {id:'e5', name:'Hand Pallet Jack', category:'Pallet Jack', active:true},
+  {id:'e6', name:'Tugger / Cart Mover', category:'Tugger', active:true},
+]);
+let processes      = Cache.get('processes', [
+  {id:'p1', name:'Inbound Receiving', category:'Inbound', active:true},
+  {id:'p2', name:'Put-Away', category:'Inbound', active:true},
+  {id:'p3', name:'Pick / Pack', category:'Outbound', active:true},
+  {id:'p4', name:'Shipping / Loading', category:'Outbound', active:true},
+  {id:'p5', name:'VAS / Personalization', category:'VAS', active:true},
+  {id:'p6', name:'Cycle Counting', category:'Inventory', active:true},
+  {id:'p7', name:'RF Scanning', category:'Systems / SAP', active:true},
+  {id:'p8', name:'SAP WM Transactions', category:'Systems / SAP', active:true},
+  {id:'p9', name:'Quality Inspection', category:'Quality', active:true},
+  {id:'p10', name:'Safety Orientation', category:'Safety', active:true},
+]);
+let sites          = Cache.get('sites', [
+  {id:'s1', name:'Millington', location:'Millington, TN', region:'South', active:true}
+]);
 
-function objToArr(obj){ if(!obj) return []; return Object.values(obj); }
+let fbConnected = false;
 
-function subscribeFirebase(){
-  db.ref('lms').on('value', snap=>{
-    const data=snap.val();
-    if(!data) return;
-    if(data.pit)      { pitRecords=objToArr(data.pit);       Cache.set('pit',pitRecords); }
-    if(data.process)  { processRecords=objToArr(data.process); Cache.set('process',processRecords); }
-    if(data.schedule) { scheduleEvents=objToArr(data.schedule); Cache.set('schedule',scheduleEvents); }
-    renderAll();
-    const dot=document.getElementById('fbDot');
-    if(dot){ dot.style.background='#1a7a3c'; dot.title='Firebase Connected'; }
-  }, ()=>{
-    const dot=document.getElementById('fbDot');
-    if(dot){ dot.style.background='#C8102E'; dot.title='Offline — using cached data'; }
+// Convert array to Firebase object keyed by id
+function arrToObj(arr) {
+  const obj = {};
+  arr.forEach(item => { if (item.id) obj[item.id] = item; });
+  return obj;
+}
+
+// Convert Firebase object back to array
+function objToArr(obj) {
+  if (!obj) return [];
+  return Object.values(obj);
+}
+
+// OPS VIEW: save() is a no-op
+function save() { /* writes disabled in operations view */ }
+function save_DISABLED_UNUSED() {
+  // Always update localStorage cache immediately
+  Cache.set('pit', pitRecords);
+  Cache.set('process', processRecords);
+  Cache.set('schedule', scheduleEvents);
+  Cache.set('equipment', equipment);
+  Cache.set('processes', processes);
+  Cache.set('sites', sites);
+
+  if (!fbConnected) return;
+
+  // Write to Firebase (non-blocking)
+  const updates = {
+    'lms/pit':       arrToObj(pitRecords),
+    'lms/process':   arrToObj(processRecords),
+    'lms/schedule':  arrToObj(scheduleEvents),
+    'lms/equipment': arrToObj(equipment),
+    'lms/processes': arrToObj(processes),
+    'lms/sites':     arrToObj(sites),
+  };
+  db.ref().update(updates).catch(err => {
+    console.error('Firebase write error:', err);
+    toast('Sync error — data saved locally.', 'error');
   });
 }
 
+// Subscribe to live Firebase updates
+function subscribeFirebase() {
+  db.ref('lms').on('value', snapshot => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    let changed = false;
+
+    if (data.pit)       { pitRecords     = objToArr(data.pit);       Cache.set('pit', pitRecords);       changed = true; }
+    if (data.process)   { processRecords = objToArr(data.process);   Cache.set('process', processRecords); changed = true; }
+    if (data.schedule)  { scheduleEvents = objToArr(data.schedule);  Cache.set('schedule', scheduleEvents); changed = true; }
+    if (data.equipment) { equipment      = objToArr(data.equipment); Cache.set('equipment', equipment);   changed = true; }
+    if (data.processes) { processes      = objToArr(data.processes); Cache.set('processes', processes);   changed = true; }
+    if (data.sites)     { sites          = objToArr(data.sites);     Cache.set('sites', sites);           changed = true; }
+
+    if (changed) {
+      // Refresh whichever page is currently active
+      const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
+      if (activePage === 'dashboard')        renderDashboard();
+      if (activePage === 'regional')         renderRegional();
+      if (activePage === 'pit-overview')     renderPitOverview();
+      if (activePage === 'pit-records')      renderPitRecords();
+      if (activePage === 'process-records')  renderProcessRecords();
+      if (activePage === 'admin-equipment')  renderEquipment();
+      if (activePage === 'admin-processes')  renderProcessAdmin();
+      if (activePage === 'admin-sites')      renderSites();
+      if (activePage === 'calendar')         renderCalendar();
+      syncSiteSelects();
+    }
+  }, err => {
+    console.error('Firebase read error:', err);
+    setFbStatus(false, err.message);
+  });
+}
+
+// Connection state monitor
+function setFbStatus(connected, detail) {
+  fbConnected = connected;
+  const dot   = document.getElementById('fbDot');
+  const label = document.getElementById('fbLabel');
+  if (dot)   dot.style.background = connected ? '#1a7a3c' : '#C8102E';
+  if (label) label.textContent    = connected ? 'Firebase Connected' : 'Offline — Local Only';
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,6); }
+
+// ===================================================
+// NAVIGATION
+// ===================================================
+const pageTitles = {
+  'dashboard': 'Dashboard',
+  'regional': 'Regional Overview',
+  'calendar': 'Training Schedule',
+  'pit-overview': 'PIT Operator Overview',
+  'pit-records': 'PIT Training Records',
+  'process-records': 'Process Training Records',
+  'trainee-search': 'Trainee History',
+};
+
 function showPage(id) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   document.querySelector(`.nav-item[onclick="showPage('${id}')"]`)?.classList.add('active');
-  const titles={dashboard:'Dashboard','pit-overview':'PIT Operator Overview','pit-records':'PIT Training Records','process-records':'Process Training Records',schedule:'Upcoming Training'};
-  document.getElementById('topbarTitle').textContent = titles[id]||id;
-  renderAll();
+  document.getElementById('topbarTitle').textContent = pageTitles[id] || id;
+
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'regional') renderRegional();
+  if (id === 'calendar') renderCalendar();
+  if (id === 'trainee-search') { document.getElementById('traineeSearchInput').value = ''; resetTraineeHistory(); }
+  if (id === 'pit-overview') renderPitOverview();
+  if (id === 'pit-records') renderPitRecords();
+  if (id === 'process-records') renderProcessRecords();
 }
 
-function daysUntil(str) {
-  if(!str) return null;
-  const now=new Date(); now.setHours(0,0,0,0);
-  const exp=new Date(str); exp.setHours(0,0,0,0);
-  return Math.round((exp-now)/86400000);
+// ===================================================
+// MODALS
+// ===================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  // write modal inits removed in ops view
 }
 
-function getExpiryBand(d) {
-  if(d===null) return null;
-  if(d<=3) return {label:(d<0?'EXPIRED':'CRITICAL — '+d+' day'+(d===1?'':'s')),cls:'band-critical'};
-  if(d<=10) return {label:'URGENT — '+d+' days',cls:'band-urgent'};
-  if(d<=30) return {label:'WARNING — '+d+' days',cls:'band-warning'};
-  if(d<=60) return {label:'NOTICE — '+d+' days',cls:'band-warning'};
-  if(d<=90) return {label:'UPCOMING — '+d+' days',cls:'band-notice'};
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  // write modal close handlers removed in ops view
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); });
+});
+
+// ===================================================
+// TOAST
+// ===================================================
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 3000);
+}
+
+// ===================================================
+// OPS MODE
+// ===================================================
+
+
+// ===================================================
+// SITE MANAGEMENT
+// ===================================================
+function changeSite(val) {
+  document.querySelectorAll('.site-name-label').forEach(el => el.textContent = val);
+  renderDashboard();
+  if (document.getElementById('page-pit-overview').classList.contains('active')) renderPitOverview();
+  if (document.getElementById('page-pit-records').classList.contains('active')) renderPitRecords();
+  if (document.getElementById('page-process-records').classList.contains('active')) renderProcessRecords();
+}
+
+function renderSites() {
+  const tbody = document.getElementById('siteBody');
+  tbody.innerHTML = '';
+  sites.forEach(s => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.location||'—'}</td>
+      <td>${s.region||'—'}</td>
+      <td>${s.active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+      <td><div class="action-btns">
+        <button class="icon-btn" onclick="editSite('${s.id}')" title="Edit">${iconEdit}</button>
+        <button class="icon-btn danger" onclick="deleteSite('${s.id}')" title="Delete">${iconTrash}</button>
+      </div></td>
+    </tr>`;
+  });
+  syncSiteSelects();
+}
+
+function editSite(id) { /* disabled in ops view */ if(true) return;
+  const s = sites.find(x=>x.id===id);
+  if (!s) return;
+  document.getElementById('site-name').value = s.name;
+  document.getElementById('site-location').value = s.location||'';
+  document.getElementById('site-region').value = s.region||'';
+  document.getElementById('site-active').value = String(s.active);
+  document.getElementById('site-edit-id').value = s.id;
+  document.getElementById('siteModalTitle').textContent = 'Edit Site';
+  openModal('modal-site');
+}
+
+function saveSite() { /* disabled in ops view */ if(true) return;
+  const name = document.getElementById('site-name').value.trim();
+  if (!name) { toast('Site name is required.','error'); return; }
+  const editId = document.getElementById('site-edit-id').value;
+  const obj = {
+    name, 
+    location: document.getElementById('site-location').value.trim(),
+    region: document.getElementById('site-region').value.trim(),
+    active: document.getElementById('site-active').value === 'true'
+  };
+  if (editId) {
+    const idx = sites.findIndex(x=>x.id===editId);
+    sites[idx] = {...sites[idx], ...obj};
+  } else {
+    sites.push({id:uid(), ...obj});
+  }
+  save(); renderSites(); syncSiteSelects();
+  closeModal('modal-site');
+  toast('Site saved.');
+}
+
+function deleteSite(id) { /* disabled in ops view */ if(true) return;
+  if (!confirm('Delete this site?')) return;
+  sites = sites.filter(x=>x.id!==id);
+  save(); renderSites(); syncSiteSelects();
+  toast('Site deleted.');
+}
+
+function syncSiteSelects() {
+  const activeSites = sites.filter(s=>s.active);
+  const selects = ['siteSelect','pit-site','proc-site','sched-site','calSiteFilter','pitRecordsSite','processSiteFilter'];
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isFilter = id === 'calSiteFilter' || id === 'pitRecordsSite' || id === 'processSiteFilter';
+    const cur = el.value;
+    el.innerHTML = isFilter ? '<option value="">All Sites</option>' : '';
+    activeSites.forEach(s => {
+      el.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+    });
+    if (cur) el.value = cur;
+  });
+}
+
+// ===================================================
+// EQUIPMENT
+// ===================================================
+function renderEquipment() {
+  const tbody = document.getElementById('equipBody');
+  tbody.innerHTML = '';
+  equipment.forEach(e => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${e.name}</strong></td>
+      <td>${e.category}</td>
+      <td>${e.active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+      <td><div class="action-btns">
+        <button class="icon-btn" onclick="editEquipment('${e.id}')" title="Edit">${iconEdit}</button>
+        <button class="icon-btn danger" onclick="deleteEquipment('${e.id}')" title="Delete">${iconTrash}</button>
+      </div></td>
+    </tr>`;
+  });
+}
+
+function populatePitEquipmentSelect() {
+  const sel = document.getElementById('pit-equipment');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select equipment…</option>';
+  equipment.filter(e=>e.active).forEach(e => {
+    sel.innerHTML += `<option value="${e.name}">${e.name}</option>`;
+  });
+  sel.value = cur;
+}
+
+function editEquipment(id) { /* disabled in ops view */ if(true) return;
+  const e = equipment.find(x=>x.id===id);
+  if (!e) return;
+  document.getElementById('equip-name').value = e.name;
+  document.getElementById('equip-category').value = e.category;
+  document.getElementById('equip-active').value = String(e.active);
+  document.getElementById('equip-edit-id').value = e.id;
+  document.getElementById('equipModalTitle').textContent = 'Edit Equipment';
+  openModal('modal-equip');
+}
+
+function saveEquipment() { /* disabled in ops view */ if(true) return;
+  const name = document.getElementById('equip-name').value.trim();
+  if (!name) { toast('Equipment name is required.','error'); return; }
+  const editId = document.getElementById('equip-edit-id').value;
+  const obj = { name, category: document.getElementById('equip-category').value, active: document.getElementById('equip-active').value === 'true' };
+  if (editId) {
+    const idx = equipment.findIndex(x=>x.id===editId);
+    equipment[idx] = {...equipment[idx], ...obj};
+  } else {
+    equipment.push({id:uid(), ...obj});
+  }
+  save(); renderEquipment();
+  closeModal('modal-equip');
+  toast('Equipment saved.');
+}
+
+function deleteEquipment(id) { /* disabled in ops view */ if(true) return;
+  if (!confirm('Delete this equipment type?')) return;
+  equipment = equipment.filter(x=>x.id!==id);
+  save(); renderEquipment();
+  toast('Equipment deleted.');
+}
+
+// ===================================================
+// PROCESSES ADMIN
+// ===================================================
+function renderProcessAdmin() {
+  const tbody = document.getElementById('processAdminBody');
+  tbody.innerHTML = '';
+  processes.forEach(p => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.category}</td>
+      <td>${p.active ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+      <td><div class="action-btns">
+        <button class="icon-btn" onclick="editProcessAdmin('${p.id}')" title="Edit">${iconEdit}</button>
+        <button class="icon-btn danger" onclick="deleteProcessAdmin('${p.id}')" title="Delete">${iconTrash}</button>
+      </div></td>
+    </tr>`;
+  });
+}
+
+function populateProcSelect() {
+  const sel = document.getElementById('proc-process');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select process…</option>';
+  processes.filter(p=>p.active).forEach(p => {
+    sel.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+  });
+  sel.value = cur;
+}
+
+function editProcessAdmin(id) { /* disabled in ops view */ if(true) return;
+  const p = processes.find(x=>x.id===id);
+  if (!p) return;
+  document.getElementById('proc-admin-name').value = p.name;
+  document.getElementById('proc-admin-category').value = p.category;
+  document.getElementById('proc-admin-active').value = String(p.active);
+  document.getElementById('proc-admin-edit-id').value = p.id;
+  document.getElementById('procAdminModalTitle').textContent = 'Edit Process';
+  openModal('modal-process-admin');
+}
+
+function saveProcessAdmin() { /* disabled in ops view */ if(true) return;
+  const name = document.getElementById('proc-admin-name').value.trim();
+  if (!name) { toast('Process name is required.','error'); return; }
+  const editId = document.getElementById('proc-admin-edit-id').value;
+  const obj = { name, category: document.getElementById('proc-admin-category').value, active: document.getElementById('proc-admin-active').value === 'true' };
+  if (editId) {
+    const idx = processes.findIndex(x=>x.id===editId);
+    processes[idx] = {...processes[idx], ...obj};
+  } else {
+    processes.push({id:uid(), ...obj});
+  }
+  save(); renderProcessAdmin();
+  closeModal('modal-process-admin');
+  toast('Process saved.');
+}
+
+function deleteProcessAdmin(id) { /* disabled in ops view */ if(true) return;
+  if (!confirm('Delete this process?')) return;
+  processes = processes.filter(x=>x.id!==id);
+  save(); renderProcessAdmin();
+  toast('Process deleted.');
+}
+
+// ===================================================
+// PASS / FAIL BUTTONS
+// ===================================================
+function setPF(btn, fieldId, val) {
+  const grp = btn.closest('.pf-group');
+  grp.querySelectorAll('.pf-btn').forEach(b => { b.classList.remove('pass-selected','fail-selected'); });
+  btn.classList.add(val === 'Pass' ? 'pass-selected' : 'fail-selected');
+  document.getElementById(fieldId).value = val;
+}
+
+// ===================================================
+// PIT RECORDS
+// ===================================================
+function togglePitComments() {
+  const val = document.getElementById('pit-completion').value;
+  document.getElementById('pit-comments-group').style.display = val === 'Incomplete' ? 'flex' : 'none';
+}
+
+function toggleProcComments() {
+  const val = document.getElementById('proc-completion').value;
+  document.getElementById('proc-comments-group').style.display = val === 'Incomplete' ? 'flex' : 'none';
+}
+
+function calcPitExpiry() {
+  const cert = document.getElementById('pit-cert-date').value;
+  if (!cert) return;
+  const d = new Date(cert);
+  d.setFullYear(d.getFullYear() + 2);
+  document.getElementById('pit-expiry').value = d.toISOString().split('T')[0];
+}
+
+function editPitRecord(id) { /* disabled in ops view */ if(true) return;
+  const r = pitRecords.find(x => x.id === id);
+  if (!r) return;
+  populatePitEquipmentSelect();
+  document.getElementById('pit-edit-id').value = r.id;
+  document.getElementById('pit-name').value = r.name || '';
+  document.getElementById('pit-hire-date').value = r.hireDate || '';
+  document.getElementById('pit-position').value = r.position || '';
+  document.getElementById('pit-title').value = r.title || '';
+  document.getElementById('pit-supervisor').value = r.supervisor || '';
+  document.getElementById('pit-shift').value = r.shift || '';
+  document.getElementById('pit-site').value = r.site || '';
+  document.getElementById('pit-equipment').value = r.equipment || '';
+  document.getElementById('pit-evaluator').value = r.evaluator || '';
+  document.getElementById('pit-cert-date').value = r.certDate || '';
+  document.getElementById('pit-expiry').value = r.expiry || '';
+  document.getElementById('pit-completion').value = r.completion || '';
+  document.getElementById('pit-comments').value = r.comments || '';
+  document.getElementById('pit-comments-group').style.display = r.completion === 'Incomplete' ? 'flex' : 'none';
+  // Restore recertifications list
+  _recertEntries = migrateRecerts(r);
+  renderRecertList(_recertEntries);
+  // Restore pass/fail button states
+  ['classroom','handson','oje'].forEach(field => {
+    const val = r[field];
+    if (!val) return;
+    const row = document.getElementById('pit-'+field).previousElementSibling;
+    if (row) {
+      row.querySelectorAll('.pf-btn').forEach(btn => {
+        btn.classList.remove('pass-selected','fail-selected');
+        if (btn.textContent.trim() === val) btn.classList.add(val === 'Pass' ? 'pass-selected' : 'fail-selected');
+      });
+    }
+    document.getElementById('pit-'+field).value = val;
+  });
+  document.getElementById('pitModalTitle').textContent = 'Edit PIT Record — ' + r.name;
+  document.getElementById('pitModalSaveBtn').textContent = 'Update PIT Record';
+  document.getElementById('modal-pit').classList.add('open');
+}
+
+function savePitRecord() { /* disabled in ops view */ if(true) return;
+  const editId = document.getElementById('pit-edit-id').value;
+  const name = document.getElementById('pit-name').value.trim();
+  const equipment_type = document.getElementById('pit-equipment').value;
+  const evaluator = document.getElementById('pit-evaluator').value.trim();
+  const completion = document.getElementById('pit-completion').value;
+  const comments = document.getElementById('pit-comments').value.trim();
+
+  if (!name) { toast('Trainee name is required.','error'); return; }
+  if (!equipment_type) { toast('Equipment type is required.','error'); return; }
+  if (!evaluator) { toast('Evaluator name is required.','error'); return; }
+  if (!completion) { toast('Please select a completion status.','error'); return; }
+  if (completion === 'Incomplete' && !comments) { toast('Comments are required when training is incomplete.','error'); return; }
+
+  const recData = {
+    type: 'pit',
+    name,
+    hireDate: document.getElementById('pit-hire-date').value,
+    position: document.getElementById('pit-position').value.trim(),
+    title: document.getElementById('pit-title').value.trim(),
+    supervisor: document.getElementById('pit-supervisor').value.trim(),
+    shift: document.getElementById('pit-shift').value,
+    site: document.getElementById('pit-site').value,
+    equipment: equipment_type,
+    evaluator,
+    classroom: document.getElementById('pit-classroom').value,
+    handson: document.getElementById('pit-handson').value,
+    oje: document.getElementById('pit-oje').value,
+    completion,
+    certDate: document.getElementById('pit-cert-date').value,
+    expiry: document.getElementById('pit-expiry').value,
+    comments,
+    recertifications: collectRecerts(),
+  };
+
+  if (editId) {
+    const idx = pitRecords.findIndex(r => r.id === editId);
+    if (idx !== -1) {
+      pitRecords[idx] = { ...pitRecords[idx], ...recData, updatedAt: new Date().toISOString() };
+      toast('PIT record updated.');
+    }
+  } else {
+    pitRecords.unshift({ id: uid(), ...recData, createdAt: new Date().toISOString() });
+    toast('PIT record saved.');
+  }
+
+  save();
+  closeModal('modal-pit');
+  renderDashboard();
+  renderPitRecords();
+  renderPitOverview();
+}
+
+function clearPitForm() { /* disabled in ops view */ if(true) return;
+  document.getElementById('pit-edit-id').value = '';
+  ['pit-name','pit-hire-date','pit-position','pit-title','pit-supervisor','pit-cert-date','pit-expiry','pit-comments','pit-classroom','pit-handson','pit-oje'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('pit-shift').value = '';
+  document.getElementById('pit-completion').value = '';
+  document.getElementById('pit-comments-group').style.display = 'none';
+  document.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('pass-selected','fail-selected'));
+  renderRecertList([]);
+  document.getElementById('pitModalTitle').textContent = 'Log PIT Training Record';
+  document.getElementById('pitModalSaveBtn').textContent = 'Save PIT Record';
+}
+
+function deletePitRecord(id) { /* disabled in ops view */ if(true) return;
+  if (!confirm('Permanently delete this PIT record?')) return;
+  pitRecords = pitRecords.filter(r=>r.id!==id);
+  save(); renderPitRecords(); renderPitOverview(); renderDashboard();
+  toast('Record deleted.');
+}
+
+function renderPitRecords(filter='') {
+  const tbody = document.getElementById('pitRecordsBody');
+  const search = document.getElementById('pitRecordsSearch')?.value.toLowerCase() || '';
+  const resultFilter = document.getElementById('pitRecordsResult')?.value || '';
+  const siteFilter = document.getElementById('pitRecordsSite')?.value || '';
+
+  let data = pitRecords.filter(r => {
+    const matchSearch = !search || r.name.toLowerCase().includes(search) || (r.equipment||'').toLowerCase().includes(search);
+    const matchResult = !resultFilter || r.completion === resultFilter;
+    const matchSite = !siteFilter || r.site === siteFilter;
+    return matchSearch && matchResult && matchSite;
+  });
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--gray-400);padding:28px">No records match your filter.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--gray-500)">${r.shift||''}</span></td>
+      <td style="font-size:12px">${r.position||'—'}</td>
+      <td>${r.equipment||'—'}</td>
+      <td>${pfBadge(r.classroom)}</td>
+      <td>${pfBadge(r.handson)}</td>
+      <td>${pfBadge(r.oje)}</td>
+      <td>${completionBadge(r.completion)}</td>
+      <td style="font-size:12px">${r.evaluator||'—'}</td>
+      <td style="font-size:12px">${fmtDate(r.certDate)}</td>
+      <td style="font-size:12px">${expiryBadge(r.expiry)}</td>
+      <td style="font-size:11px">${recertSummaryCell(migrateRecerts(r))}</td>
+      <td><div class="action-btns">
+        <button class="icon-btn" onclick="viewRecord('pit','${r.id}')" title="View">${iconEye}</button>
+        <button class="icon-btn danger" onclick="deletePitRecord('${r.id}')" title="Delete">${iconTrash}</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+function filterPitRecords() { renderPitRecords(); }
+
+// ===================================================
+// PROCESS RECORDS
+// ===================================================
+function saveProcessRecord() { /* disabled in ops view */ if(true) return;
+  const name = document.getElementById('proc-name').value.trim();
+  const process = document.getElementById('proc-process').value;
+  const evaluator = document.getElementById('proc-evaluator').value.trim();
+  const completion = document.getElementById('proc-completion').value;
+  const certDate = document.getElementById('proc-cert-date').value;
+  const comments = document.getElementById('proc-comments').value.trim();
+
+  if (!name) { toast('Trainee name is required.','error'); return; }
+  if (!process) { toast('Please select a process.','error'); return; }
+  if (!evaluator) { toast('Evaluator name is required.','error'); return; }
+  if (!certDate) { toast('Date certified is required.','error'); return; }
+  if (!completion) { toast('Please select a completion status.','error'); return; }
+  if (completion === 'Incomplete' && !comments) { toast('Comments are required when training is incomplete.','error'); return; }
+
+  const rec = {
+    id: uid(),
+    type: 'process',
+    name,
+    hireDate: document.getElementById('proc-hire-date').value,
+    position: document.getElementById('proc-position').value.trim(),
+    title: document.getElementById('proc-title').value.trim(),
+    supervisor: document.getElementById('proc-supervisor').value.trim(),
+    shift: document.getElementById('proc-shift').value,
+    site: document.getElementById('proc-site').value,
+    process,
+    evaluator,
+    certDate,
+    completion,
+    comments,
+    createdAt: new Date().toISOString(),
+  };
+
+  processRecords.unshift(rec);
+  save();
+  closeModal('modal-process');
+  toast('Process record saved.');
+  renderDashboard();
+  renderProcessRecords();
+}
+
+function clearProcForm() { /* disabled in ops view */ if(true) return;
+  ['proc-name','proc-hire-date','proc-position','proc-title','proc-supervisor','proc-cert-date','proc-comments'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('proc-shift').value = '';
+  document.getElementById('proc-completion').value = '';
+  document.getElementById('proc-process').value = '';
+  document.getElementById('proc-comments-group').style.display = 'none';
+}
+
+function deleteProcessRecord(id) { /* disabled in ops view */ if(true) return;
+  if (!confirm('Permanently delete this process record?')) return;
+  processRecords = processRecords.filter(r=>r.id!==id);
+  save(); renderProcessRecords(); renderDashboard();
+  toast('Record deleted.');
+}
+
+function renderProcessRecords() {
+  const tbody = document.getElementById('processRecordsBody');
+  const search = document.getElementById('processSearch')?.value.toLowerCase() || '';
+  const resultFilter = document.getElementById('processResultFilter')?.value || '';
+  const siteFilter = document.getElementById('processSiteFilter')?.value || '';
+
+  let data = processRecords.filter(r => {
+    const matchSearch = !search || r.name.toLowerCase().includes(search) || (r.process||'').toLowerCase().includes(search);
+    const matchResult = !resultFilter || r.completion === resultFilter;
+    const matchSite = !siteFilter || r.site === siteFilter;
+    return matchSearch && matchResult && matchSite;
+  });
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:28px">No records match your filter.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--gray-500)">${r.shift||''}</span></td>
+      <td style="font-size:12px">${r.position||'—'}</td>
+      <td>${r.process||'—'}</td>
+      <td>${completionBadge(r.completion)}</td>
+      <td style="font-size:12px">${r.evaluator||'—'}</td>
+      <td style="font-size:12px">${fmtDate(r.certDate)}</td>
+      <td style="font-size:12px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.comments||'—'}</td>
+      <td><div class="action-btns">
+        <button class="icon-btn" onclick="viewRecord('process','${r.id}')" title="View">${iconEye}</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+function filterProcessRecords() { renderProcessRecords(); }
+
+// ===================================================
+// VIEW RECORD DETAIL
+// ===================================================
+function viewRecord(type, id) {
+  const r = type === 'pit' ? pitRecords.find(x=>x.id===id) : processRecords.find(x=>x.id===id);
+  if (!r) return;
+  const title = type === 'pit' ? `PIT Record — ${r.name}` : `Process Record — ${r.name}`;
+  document.getElementById('viewRecordTitle').textContent = title;
+
+  let html = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;font-size:13.5px">
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Trainee</span><strong>${r.name}</strong></div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Site</span>${r.site||'—'}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Position</span>${r.position||'—'}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Title</span>${r.title||'—'}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Date of Hire</span>${fmtDate(r.hireDate)}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Supervisor</span>${r.supervisor||'—'}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Shift</span>${r.shift||'—'}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Evaluator</span>${r.evaluator||'—'}</div>`;
+
+  if (type === 'pit') {
+    html += `
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Equipment</span>${r.equipment||'—'}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Completion</span>${completionBadge(r.completion)}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Date Certified</span>${fmtDate(r.certDate)}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">License Expires</span>${expiryBadge(r.expiry)}</div>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid var(--gray-200);padding-top:14px">
+      <div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:10px">Evaluation Results</div>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1;text-align:center;background:var(--gray-50);border-radius:6px;padding:10px">
+          <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px">Classroom</div>
+          ${pfBadge(r.classroom)}
+        </div>
+        <div style="flex:1;text-align:center;background:var(--gray-50);border-radius:6px;padding:10px">
+          <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px">Hands-On</div>
+          ${pfBadge(r.handson)}
+        </div>
+        <div style="flex:1;text-align:center;background:var(--gray-50);border-radius:6px;padding:10px">
+          <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px">OJE</div>
+          ${pfBadge(r.oje)}
+        </div>
+      </div>
+    </div>
+    ${(()=>{
+      const recerts = migrateRecerts(r);
+      if (!recerts.length) return '';
+      return `<div style="margin-top:14px;border-top:1px solid var(--gray-200);padding-top:14px">
+        <div style="font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:10px">Recertification History (${recerts.length})</div>
+        ${recerts.map((rc,i) => `<div style="background:var(--gray-50);border-radius:6px;padding:10px 14px;margin-bottom:8px;border-left:3px solid var(--orange)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span class="badge badge-orange" style="font-size:10px;text-transform:none;letter-spacing:0">${rc.reason||'—'}</span>
+            <span style="font-size:12px;color:var(--gray-500);font-weight:600">${fmtDate(rc.date)}</span>
+          </div>
+          ${rc.notes ? `<div style="font-size:12px;color:var(--gray-600);margin-top:4px">${rc.notes}</div>` : ''}
+        </div>`).join('')}
+      </div>`;
+    })()}`;
+  } else {
+    html += `
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Process</span>${r.process||'—'}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Result</span>${completionBadge(r.completion)}</div>
+      <div><span style="font-size:11px;color:var(--gray-500);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Date Certified</span>${fmtDate(r.certDate)}</div>
+    </div>`;
+  }
+
+  if (r.comments) {
+    html += `<div style="margin-top:14px;padding:12px;background:var(--orange-light);border-radius:6px;border-left:3px solid var(--orange);font-size:13px;color:#6b3a00"><strong>Comments:</strong> ${r.comments}</div>`;
+  }
+
+  document.getElementById('viewRecordBody').innerHTML = html;
+  openModal('modal-view-record');
+}
+
+// ===================================================
+// PIT OVERVIEW
+// ===================================================
+const EXPIRY_BANDS = [
+  {days:1, label:'1 Day', cls:'band-critical'},
+  {days:2, label:'2 Days', cls:'band-critical'},
+  {days:3, label:'3 Days', cls:'band-critical'},
+  {days:5, label:'5 Days', cls:'band-critical'},
+  {days:10, label:'10 Days', cls:'band-urgent'},
+  {days:15, label:'15 Days', cls:'band-urgent'},
+  {days:30, label:'30 Days', cls:'band-warning'},
+  {days:60, label:'60 Days', cls:'band-warning'},
+  {days:90, label:'90 Days', cls:'band-notice'},
+];
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const exp = new Date(dateStr); exp.setHours(0,0,0,0);
+  return Math.round((exp - now) / 86400000);
+}
+
+function getExpiryBand(days) {
+  if (days === null) return null;
+  if (days <= 3) return {label:'CRITICAL — ' + (days < 0 ? 'EXPIRED' : days + ' day' + (days===1?'':'s')), cls:'band-critical'};
+  if (days <= 10) return {label:'URGENT — ' + days + ' days', cls:'band-urgent'};
+  if (days <= 30) return {label:'WARNING — ' + days + ' days', cls:'band-warning'};
+  if (days <= 60) return {label:'NOTICE — ' + days + ' days', cls:'band-warning'};
+  if (days <= 90) return {label:'UPCOMING — ' + days + ' days', cls:'band-notice'};
   return null;
 }
 
+function renderPitOverview() {
+  const now = new Date(); now.setHours(0,0,0,0);
+
+  // Build latest record per operator+equipment
+  const latest = {};
+  pitRecords.forEach(r => {
+    if (r.completion !== 'Completed') return;
+    const key = r.name + '||' + r.equipment;
+    if (!latest[key] || r.certDate > latest[key].certDate) latest[key] = r;
+  });
+  const active = Object.values(latest);
+
+  // KPI strip
+  const expiring90 = active.filter(r => { const d = daysUntil(r.expiry); return d !== null && d <= 90; });
+  const expired = active.filter(r => { const d = daysUntil(r.expiry); return d !== null && d < 0; });
+  document.getElementById('pitSummaryStrip').innerHTML = `
+    <div class="strip-item"><div><div class="strip-item-num">${active.length}</div><div class="strip-item-label">Active Operators</div></div></div>
+    <div class="strip-item"><div><div class="strip-item-num" style="color:var(--orange)">${expiring90.length}</div><div class="strip-item-label">Expiring ≤ 90 Days</div></div></div>
+    <div class="strip-item"><div><div class="strip-item-num" style="color:var(--red)">${expired.length}</div><div class="strip-item-label">Expired</div></div></div>
+  `;
+
+  // Alert list (≤90 days)
+  const alertEl = document.getElementById('pitAlertList');
+  const alerts = active.filter(r => { const d = daysUntil(r.expiry); return d !== null && d <= 90; }).sort((a,b) => daysUntil(a.expiry) - daysUntil(b.expiry));
+  if (!alerts.length) {
+    alertEl.innerHTML = '<div class="empty-state" style="padding:20px"><p>No expirations within 90 days.</p></div>';
+  } else {
+    alertEl.innerHTML = alerts.map(r => {
+      const d = daysUntil(r.expiry);
+      const band = getExpiryBand(d);
+      return `<div class="pit-band ${band.cls}" style="cursor:pointer" onclick="viewRecord('pit','${r.id}')">
+        <div>
+          <div class="pit-band-label">${band.label}</div>
+          <div class="pit-band-name">${r.name}</div>
+          <div class="pit-band-days">${r.equipment} · Expires ${fmtDate(r.expiry)}</div>
+        </div>
+        <div style="font-size:11px;color:inherit;opacity:0.6">${r.site}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Overview table
+  const tbody = document.getElementById('pitOverviewBody');
+  const search = document.getElementById('pitOverviewSearch')?.value.toLowerCase() || '';
+  const data = active.filter(r => !search || r.name.toLowerCase().includes(search) || (r.equipment||'').toLowerCase().includes(search));
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:20px">No operators found.</td></tr>';
+  } else {
+    tbody.innerHTML = data.sort((a,b) => (daysUntil(a.expiry)||999) - (daysUntil(b.expiry)||999)).map(r => {
+      const d = daysUntil(r.expiry);
+      const band = getExpiryBand(d);
+      return `<tr>
+        <td><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--gray-500)">${r.site}</span></td>
+        <td style="font-size:12px">${r.equipment}</td>
+        <td style="font-size:12px">${fmtDate(r.expiry)}</td>
+        <td>${band ? `<span class="badge ${band.cls.replace('band-','badge-')}" style="font-size:10px">${d < 0 ? 'EXPIRED' : d + 'd'}</span>` : '<span class="badge badge-green">Current</span>'}</td>
+        <td><div class="action-btns">
+          <button class="icon-btn" onclick="viewRecord('pit','${r.id}')" title="View">${iconEye}</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function filterPitOverview(val) { renderPitOverview(); }
+
+// ===================================================
+// DASHBOARD
+// ===================================================
+function renderDashboard() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const thisYear = now.getFullYear();
+  const site = document.getElementById('siteSelect')?.value || '';
+
+  // PIT latest per operator — filtered to selected site
+  const latest = {};
+  pitRecords.forEach(r => {
+    if (r.completion !== 'Completed') return;
+    if (site && r.site !== site) return;
+    const key = r.name + '||' + r.equipment;
+    if (!latest[key] || r.certDate > latest[key].certDate) latest[key] = r;
+  });
+  const activePit = Object.values(latest);
+  const expiring90 = activePit.filter(r => { const d = daysUntil(r.expiry); return d !== null && d <= 90; });
+
+  const ytdProcess = processRecords.filter(r => {
+    if (site && r.site !== site) return false;
+    if (!r.certDate) return false;
+    return new Date(r.certDate).getFullYear() === thisYear;
+  }).length;
+
+  const thisMonth = scheduleEvents.filter(ev => {
+    if (site && ev.site !== site) return false;
+    if (!ev.date) return false;
+    const d = new Date(ev.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
+  document.getElementById('kpi-pit-total').textContent = activePit.length;
+  document.getElementById('kpi-pit-expiring').textContent = expiring90.length;
+  document.getElementById('kpi-process-ytd').textContent = ytdProcess;
+  document.getElementById('kpi-scheduled').textContent = thisMonth;
+
+  // PIT alerts
+  const alertEl = document.getElementById('dash-pit-alerts');
+  const alerts = expiring90.sort((a,b) => daysUntil(a.expiry) - daysUntil(b.expiry)).slice(0,5);
+  if (!alerts.length) {
+    alertEl.innerHTML = '<div class="empty-state" style="padding:20px"><p>No expiration alerts at this time.</p></div>';
+  } else {
+    alertEl.innerHTML = alerts.map(r => {
+      const d = daysUntil(r.expiry);
+      const band = getExpiryBand(d);
+      return `<div class="pit-band ${band.cls}" style="margin-bottom:6px">
+        <div>
+          <div class="pit-band-label">${band.label}</div>
+          <div class="pit-band-name">${r.name}</div>
+          <div class="pit-band-days">${r.equipment}</div>
+        </div>
+      </div>`;
+    }).join('') + (expiring90.length > 5 ? `<div style="text-align:center;margin-top:8px"><button class="btn btn-ghost btn-sm" onclick="showPage('pit-overview')">View All ${expiring90.length} →</button></div>` : '');
+  }
+
+  // Upcoming schedule — site filtered
+  const upcomingEl = document.getElementById('dash-upcoming');
+  const upcoming = scheduleEvents.filter(ev => {
+    if (site && ev.site !== site) return false;
+    if (!ev.date) return false;
+    return new Date(ev.date) >= now;
+  }).sort((a,b) => new Date(a.date)-new Date(b.date)).slice(0,4);
+
+  if (!upcoming.length) {
+    upcomingEl.innerHTML = '<div class="empty-state" style="padding:20px"><p>No upcoming training sessions scheduled.</p></div>';
+  } else {
+    upcomingEl.innerHTML = upcoming.map(ev => `
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
+        <div style="background:var(--navy);color:white;border-radius:6px;padding:6px 10px;text-align:center;min-width:44px;flex-shrink:0">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7">${new Date(ev.date+'T00:00:00').toLocaleDateString('en-US',{month:'short'})}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;line-height:1">${new Date(ev.date+'T00:00:00').getDate()}</div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:13.5px">${ev.title}</div>
+          <div style="font-size:12px;color:var(--gray-500)">${ev.site} · ${ev.type==='pit'?'PIT Training':'Process Training'}${ev.trainer ? ' · '+ev.trainer : ''}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Recent records — site filtered
+  const allRecords = [
+    ...pitRecords.filter(r => !site || r.site === site).map(r=>({...r, _type:'PIT'})),
+    ...processRecords.filter(r => !site || r.site === site).map(r=>({...r, _type:'Process'}))
+  ].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0,8);
+
+  const tbody = document.getElementById('dashRecentBody');
+  if (!allRecords.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:28px">No records yet.</td></tr>';
+  } else {
+    tbody.innerHTML = allRecords.map(r => `<tr>
+      <td><strong>${r.name}</strong></td>
+      <td><span class="badge ${r._type==='PIT'?'badge-navy':'badge-green'}">${r._type}</span></td>
+      <td>${r._type==='PIT'?(r.equipment||'—'):(r.process||'—')}</td>
+      <td>${completionBadge(r.completion)}</td>
+      <td style="font-size:12px">${r.evaluator||'—'}</td>
+      <td style="font-size:12px">${fmtDate(r.certDate||r.createdAt?.split('T')[0])}</td>
+    </tr>`).join('');
+  }
+}
+
+// ===================================================
+// CALENDAR
+// ===================================================
+let calYear, calMonth;
+
+function renderCalendar() {
+  const now = new Date();
+  if (calYear === undefined) { calYear = now.getFullYear(); calMonth = now.getMonth(); }
+  const siteFilter = document.getElementById('calSiteFilter')?.value || 'all';
+
+  document.getElementById('calMonthLabel').textContent =
+    new Date(calYear, calMonth).toLocaleDateString('en-US', {month:'long', year:'numeric'});
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+  let grid = '<div class="cal-header-cell">Sun</div><div class="cal-header-cell">Mon</div><div class="cal-header-cell">Tue</div><div class="cal-header-cell">Wed</div><div class="cal-header-cell">Thu</div><div class="cal-header-cell">Fri</div><div class="cal-header-cell">Sat</div>';
+
+  const filteredEvents = scheduleEvents.filter(ev => siteFilter === 'all' || ev.site === siteFilter);
+
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+  for (let i = 0; i < totalCells; i++) {
+    let date, month = calMonth, year = calYear, otherMonth = false;
+    if (i < firstDay) {
+      date = daysInPrev - firstDay + i + 1;
+      month = calMonth - 1; if (month < 0) { month = 11; year--; }
+      otherMonth = true;
+    } else if (i >= firstDay + daysInMonth) {
+      date = i - firstDay - daysInMonth + 1;
+      month = calMonth + 1; if (month > 11) { month = 0; year++; }
+      otherMonth = true;
+    } else {
+      date = i - firstDay + 1;
+    }
+
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(date).padStart(2,'0')}`;
+    const isToday = !otherMonth && date === now.getDate() && calMonth === now.getMonth() && calYear === now.getFullYear();
+    const dayEvents = filteredEvents.filter(ev => ev.date === dateStr);
+
+    grid += `<div class="cal-cell${otherMonth?' other-month':''}${isToday?' today':''}" onclick="openScheduleFromCal('${dateStr}')">
+      <div class="cal-day">${date}</div>
+      ${dayEvents.map(ev => `<div class="cal-event ${ev.type}" onclick="event.stopPropagation();showEventDetail('${ev.id}')">${ev.title}</div>`).join('')}
+    </div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = grid;
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function openScheduleFromCal(dateStr) { /* read-only in ops view */ }
+
+function showEventDetail(id) {
+  const ev = scheduleEvents.find(x=>x.id===id);
+  if (!ev) return;
+  document.getElementById('eventDetailTitle').textContent = ev.title;
+  document.getElementById('eventDetailBody').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px">
+      <div><span style="color:var(--gray-500);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Type</span><br>${ev.type==='pit'?'PIT Training':'Process Training'}</div>
+      <div><span style="color:var(--gray-500);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Date</span><br>${fmtDate(ev.date)}${ev.time?' at '+ev.time:''}</div>
+      <div><span style="color:var(--gray-500);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Site</span><br>${ev.site}</div>
+      ${ev.trainer?`<div><span style="color:var(--gray-500);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Trainer</span><br>${ev.trainer}</div>`:''}
+      ${ev.notes?`<div><span style="color:var(--gray-500);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Notes</span><br>${ev.notes}</div>`:''}
+    </div>`;
+  document.getElementById('deleteEventBtn').onclick = () => deleteEvent(id);
+  openModal('modal-event-detail');
+}
+
+function deleteEvent(id) { /* disabled in ops view */ if(true) return;
+  if (!confirm('Delete this training session?')) return;
+  scheduleEvents = scheduleEvents.filter(x=>x.id!==id);
+  save(); closeModal('modal-event-detail'); renderCalendar(); renderDashboard();
+  toast('Session deleted.');
+}
+
+function saveSchedule() { /* disabled in ops view */ if(true) return;
+  const type = document.getElementById('sched-type').value;
+  const site = document.getElementById('sched-site').value;
+  const title = document.getElementById('sched-title').value.trim();
+  const date = document.getElementById('sched-date').value;
+  if (!type || !title || !date) { toast('Type, title, and date are required.','error'); return; }
+
+  scheduleEvents.push({
+    id: uid(), type, site, title, date,
+    time: document.getElementById('sched-time').value,
+    trainer: document.getElementById('sched-trainer').value.trim(),
+    notes: document.getElementById('sched-notes').value.trim(),
+    createdAt: new Date().toISOString(),
+  });
+  save(); closeModal('modal-schedule'); renderCalendar(); renderDashboard();
+  toast('Training session scheduled.');
+}
+
+function clearSchedForm() { /* disabled in ops view */ if(true) return;
+  ['sched-title','sched-date','sched-time','sched-trainer','sched-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('sched-type').value = '';
+}
+
+// ===================================================
+// HELPERS / FORMATTERS
+// ===================================================
+// ===================================================
+// MULTI-RECERTIFICATION HELPERS
+// ===================================================
+
+// Migrate old single-recert format to array format transparently
 function migrateRecerts(r) {
   if (Array.isArray(r.recertifications)) return r.recertifications;
-  if (r.recertReason) return [{reason:r.recertReason, date:r.recertDate||'', notes:r.recertNotes||''}];
+  // Legacy record with single recert fields
+  if (r.recertReason) return [{ reason: r.recertReason, date: r.recertDate || '', notes: r.recertNotes || '' }];
   return [];
 }
+
+const RECERT_REASONS = [
+  '2-Year Recertification',
+  'Post-Incident Recertification',
+  'Observed Unsafe Operation',
+  'Return from Extended Leave',
+  'Equipment Change (New Type Added)',
+  'Other',
+];
+
+function recertReasonOptions(selected) {
+  return RECERT_REASONS.map(r => `<option value="${r}"${selected===r?' selected':''}>${r}</option>`).join('');
+}
+
+function renderRecertList(entries) {
+  const list = document.getElementById('recertList');
+  if (!list) return;
+  if (!entries.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--gray-400);padding:4px 0;">No recertifications logged. Click "Add Recertification Entry" below if applicable.</div>';
+    return;
+  }
+  list.innerHTML = entries.map((e, i) => `
+    <div class="recert-entry" data-index="${i}" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;padding:12px 14px;position:relative;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--orange)">Recertification #${i+1}</span>
+        <button type="button" onclick="removeRecertEntry(${i})" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:16px;line-height:1;padding:0 2px;" title="Remove">✕</button>
+      </div>
+      <div class="form-grid" style="gap:10px">
+        <div class="form-group">
+          <label>Reason <span class="required">*</span></label>
+          <select class="recert-reason" onchange="saveRecertState()">
+            <option value="">Select reason…</option>
+            ${recertReasonOptions(e.reason)}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Recertification Date</label>
+          <input type="date" class="recert-date" value="${e.date||''}" oninput="saveRecertState()">
+        </div>
+        <div class="form-group form-full">
+          <label>Notes</label>
+          <textarea class="recert-notes" style="min-height:56px" placeholder="Describe the incident, observation, or other triggering reason…" oninput="saveRecertState()">${e.notes||''}</textarea>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// In-memory state for recert entries while modal is open
+let _recertEntries = [];
+
+function addRecertEntry() { /* disabled in ops view */ if(true) return;
+  _recertEntries = collectRecerts(); // sync from DOM first
+  _recertEntries.push({ reason: '', date: '', notes: '' });
+  renderRecertList(_recertEntries);
+}
+
+function removeRecertEntry(idx) { /* disabled in ops view */ if(true) return;
+  _recertEntries = collectRecerts();
+  _recertEntries.splice(idx, 1);
+  renderRecertList(_recertEntries);
+}
+
+function saveRecertState() {
+  _recertEntries = collectRecerts();
+}
+
+function collectRecerts() {
+  const entries = [];
+  document.querySelectorAll('.recert-entry').forEach(el => {
+    entries.push({
+      reason: el.querySelector('.recert-reason')?.value || '',
+      date: el.querySelector('.recert-date')?.value || '',
+      notes: el.querySelector('.recert-notes')?.value.trim() || '',
+    });
+  });
+  return entries;
+}
+
 function recertSummaryCell(recerts) {
   if (!recerts.length) return '—';
-  const latest = recerts.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
-  return `<span class="badge badge-orange" style="font-size:10px;text-transform:none;letter-spacing:0;white-space:nowrap;display:inline-block;margin-bottom:2px">${latest.reason||'Recertification'}</span><br><span style="color:var(--gray-500)">${fmtDate(latest.date)}</span>${recerts.length>1?`<br><span style="color:var(--gray-400);font-size:10px">+${recerts.length-1} more</span>`:''}`;
+  const latest = recerts.slice().sort((a,b) => (b.date||'').localeCompare(a.date||''))[0];
+  return `<span class="badge badge-orange" style="font-size:10px;text-transform:none;letter-spacing:0;white-space:nowrap;display:inline-block;margin-bottom:2px">${latest.reason||'Recertification'}</span>
+    <br><span style="color:var(--gray-500)">${fmtDate(latest.date)}</span>
+    ${recerts.length > 1 ? `<br><span style="color:var(--gray-400);font-size:10px">+${recerts.length-1} more</span>` : ''}`;
 }
+
 function fmtDate(str) {
-  if(!str) return '—';
-  const d=new Date(str+'T00:00:00');
-  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  if (!str) return '—';
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
 }
 
-function pfBadge(v) {
-  if(!v) return '<span style="color:#adb5bd;font-size:12px">—</span>';
-  return v==='Pass'?'<span class="badge badge-green">Pass</span>':'<span class="badge badge-red">Fail</span>';
+function pfBadge(val) {
+  if (!val) return '<span style="color:var(--gray-400);font-size:12px">—</span>';
+  if (val === 'Pass') return '<span class="badge badge-green">Pass</span>';
+  return '<span class="badge badge-red">Fail</span>';
 }
 
-function completionBadge(v) {
-  if(!v) return '—';
-  return v==='Completed'?'<span class="badge badge-green">Completed</span>':'<span class="badge badge-red">Incomplete</span>';
+function completionBadge(val) {
+  if (!val) return '<span style="color:var(--gray-400);font-size:12px">—</span>';
+  if (val === 'Completed') return '<span class="badge badge-green">Completed</span>';
+  return '<span class="badge badge-red">Incomplete</span>';
 }
 
 function expiryBadge(str) {
-  if(!str) return '—';
-  const d=daysUntil(str);
-  let color='var(--gray-700)';
-  if(d!==null){ if(d<0) color='#9b1221'; else if(d<=30) color='var(--red)'; else if(d<=90) color='var(--orange)'; }
-  return `<span style="color:${color};font-weight:${d!==null&&d<=90?'700':'400'}">${fmtDate(str)}${d!==null&&d<0?' <strong>(EXPIRED)</strong>':''}</span>`;
+  if (!str) return '—';
+  const d = daysUntil(str);
+  let color = 'var(--gray-700)';
+  if (d !== null) {
+    if (d < 0) color = '#9b1221';
+    else if (d <= 30) color = 'var(--red)';
+    else if (d <= 90) color = 'var(--orange)';
+  }
+  return `<span style="color:${color};font-weight:${d !== null && d <= 90 ? '700' : '400'}">${fmtDate(str)}${d !== null && d < 0 ? ' <strong>(EXPIRED)</strong>' : ''}</span>`;
 }
 
-function getActivePit() {
-  const latest={};
-  pitRecords.forEach(r=>{
-    if(r.completion!=='Completed') return;
-    const key=r.name+'||'+r.equipment;
+const iconEdit = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const iconTrash = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+const iconEye = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+// ===================================================
+// TRAINEE HISTORY
+// ===================================================
+let currentTraineeName = null;
+
+function getUniqueTrainees() {
+  const names = new Set();
+  pitRecords.forEach(r => { if (r.name) names.add(r.name.trim()); });
+  processRecords.forEach(r => { if (r.name) names.add(r.name.trim()); });
+  return [...names].sort((a,b) => a.localeCompare(b));
+}
+
+function resetTraineeHistory() {
+  currentTraineeName = null;
+  document.getElementById('traineeHistoryPanel').style.display = 'none';
+  document.getElementById('traineeHistoryEmpty').style.display = 'block';
+  document.getElementById('traineeMatchList').innerHTML = '';
+}
+
+function searchTrainee(val) {
+  const q = val.trim().toLowerCase();
+  const matchEl = document.getElementById('traineeMatchList');
+  if (q.length < 2) { matchEl.innerHTML = ''; return; }
+
+  const matches = getUniqueTrainees().filter(n => n.toLowerCase().includes(q));
+  if (!matches.length) {
+    matchEl.innerHTML = '<span style="font-size:13px;color:var(--gray-400);">No trainees found matching that name.</span>';
+    return;
+  }
+  matchEl.innerHTML = matches.slice(0,12).map(name =>
+    `<button class="btn btn-ghost btn-sm" onclick="loadTraineeHistory('${name.replace(/'/g,"\\'")}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      ${name}
+    </button>`
+  ).join('') + (matches.length > 12 ? `<span style="font-size:12px;color:var(--gray-400);">+${matches.length-12} more — refine your search</span>` : '');
+}
+
+function loadTraineeHistory(name) {
+  currentTraineeName = name;
+  document.getElementById('traineeSearchInput').value = name;
+  document.getElementById('traineeMatchList').innerHTML = '';
+  document.getElementById('traineeHistoryEmpty').style.display = 'none';
+  document.getElementById('traineeHistoryPanel').style.display = 'block';
+
+  const pitRecs = pitRecords.filter(r => r.name && r.name.trim() === name).sort((a,b) => (b.certDate||'').localeCompare(a.certDate||''));
+  const procRecs = processRecords.filter(r => r.name && r.name.trim() === name).sort((a,b) => (b.certDate||'').localeCompare(a.certDate||''));
+
+  // Header meta from most recent record
+  const anyRec = pitRecs[0] || procRecs[0] || {};
+  document.getElementById('traineeHistoryName').textContent = name;
+  document.getElementById('traineeHistoryMeta').textContent = [
+    anyRec.position, anyRec.title, anyRec.site, anyRec.shift ? anyRec.shift : null, anyRec.supervisor ? 'Supervisor: '+anyRec.supervisor : null
+  ].filter(Boolean).join(' · ');
+
+  // Quick-add buttons
+  document.getElementById('traineeHistoryActions').innerHTML = '';
+
+  // Summary strip
+  const latest = {};
+  pitRecs.filter(r=>r.completion==='Completed').forEach(r=>{
+    const key=r.equipment;
     if(!latest[key]||r.certDate>latest[key].certDate) latest[key]=r;
   });
-  return Object.values(latest);
+  const activePit = Object.values(latest);
+  const expiring = activePit.filter(r=>{ const d=daysUntil(r.expiry); return d!==null&&d<=90; });
+  const completedProc = procRecs.filter(r=>r.completion==='Completed').length;
+
+  document.getElementById('traineeHistorySummary').innerHTML = [
+    ['PIT Certifications', activePit.length, 'var(--navy)'],
+    ['Expiring ≤ 90 Days', expiring.length, expiring.length ? 'var(--orange)' : 'var(--navy)'],
+    ['Process Completions', completedProc, 'var(--green)'],
+    ['Total Records', pitRecs.length + procRecs.length, 'var(--navy)'],
+  ].map(([label, val, color]) => `
+    <div style="background:white;border:1px solid var(--gray-200);border-radius:6px;padding:12px 18px;display:flex;align-items:center;gap:14px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:${color};line-height:1">${val}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px">${label}</div>
+    </div>`).join('');
+
+  // PIT table
+  const pitBody = document.getElementById('traineeHistoryPitBody');
+  if (!pitRecs.length) {
+    pitBody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--gray-400);padding:20px">No PIT records on file.</td></tr>';
+  } else {
+    pitBody.innerHTML = pitRecs.map(r => `<tr>
+      <td><strong>${r.equipment||'—'}</strong></td>
+      <td>${pfBadge(r.classroom)}</td>
+      <td>${pfBadge(r.handson)}</td>
+      <td>${pfBadge(r.oje)}</td>
+      <td>${completionBadge(r.completion)}</td>
+      <td style="font-size:12px">${r.evaluator||'—'}</td>
+      <td style="font-size:12px">${fmtDate(r.certDate)}</td>
+      <td style="font-size:12px">${expiryBadge(r.expiry)}</td>
+      <td style="font-size:11px">${recertSummaryCell(migrateRecerts(r))}</td>
+      <td><div class="action-btns">
+        <button class="icon-btn" onclick="viewRecord('pit','${r.id}')" title="View">${iconEye}</button>
+      </div></td>
+    </tr>`).join('');
+  }
+
+  // Process table
+  const procBody = document.getElementById('traineeHistoryProcBody');
+  if (!procRecs.length) {
+    procBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:20px">No process records on file.</td></tr>';
+  } else {
+    procBody.innerHTML = procRecs.map(r => `<tr>
+      <td><strong>${r.process||'—'}</strong></td>
+      <td>${completionBadge(r.completion)}</td>
+      <td style="font-size:12px">${r.evaluator||'—'}</td>
+      <td style="font-size:12px">${fmtDate(r.certDate)}</td>
+      <td style="font-size:12px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.comments||'—'}</td>
+      <td><div class="action-btns">
+        <button class="icon-btn" onclick="viewRecord('process','${r.id}')" title="View">${iconEye}</button>
+      </div></td>
+    </tr>`).join('');
+  }
 }
 
-function renderAll() {
-  const site = document.getElementById('siteFilter').value;
-  document.getElementById('siteLabel').textContent = site;
-  renderDashboard(site);
-  renderPitOverview(site);
-  renderPitRecords();
-  renderProcRecords();
-  renderSchedule(site);
+function openNewPitForTrainee(name) { /* disabled in ops view */ if(true) return;
+  // Pre-fill trainee name in a fresh PIT modal
+  openModal('modal-pit');
+  setTimeout(() => {
+    document.getElementById('pit-name').value = name;
+    // Pre-fill other demographic fields from most recent record
+    const ref = [...pitRecords, ...processRecords].find(r => r.name && r.name.trim() === name);
+    if (ref) {
+      if (ref.hireDate) document.getElementById('pit-hire-date').value = ref.hireDate;
+      if (ref.position) document.getElementById('pit-position').value = ref.position;
+      if (ref.title) document.getElementById('pit-title').value = ref.title;
+      if (ref.supervisor) document.getElementById('pit-supervisor').value = ref.supervisor;
+      if (ref.shift) document.getElementById('pit-shift').value = ref.shift;
+      if (ref.site) document.getElementById('pit-site').value = ref.site;
+    }
+  }, 50);
 }
 
-function renderDashboard(site) {
-  const now=new Date(); now.setHours(0,0,0,0);
-  const yr=now.getFullYear();
-  const active=getActivePit().filter(r=>r.site===site);
-  const exp90=active.filter(r=>{const d=daysUntil(r.expiry);return d!==null&&d<=90;});
-  const ytd=processRecords.filter(r=>r.site===site&&r.certDate&&new Date(r.certDate).getFullYear()===yr).length;
-  const upcoming30=scheduleEvents.filter(ev=>{
-    if(ev.site!==site||!ev.date) return false;
-    const d=daysUntil(ev.date);
-    return d!==null&&d>=0&&d<=30;
-  }).length;
-
-  document.getElementById('k-pit').textContent=active.length;
-  document.getElementById('k-exp').textContent=exp90.length;
-  document.getElementById('k-proc').textContent=ytd;
-  document.getElementById('k-sched').textContent=upcoming30;
-
-  const alertEl=document.getElementById('dash-alerts');
-  const alerts=exp90.sort((a,b)=>daysUntil(a.expiry)-daysUntil(b.expiry)).slice(0,5);
-  if(!alerts.length){alertEl.innerHTML='<div class="empty-state">No expiration alerts.</div>';}
-  else alertEl.innerHTML=alerts.map(r=>{const d=daysUntil(r.expiry),band=getExpiryBand(d);return`<div class="pit-band ${band.cls}"><div class="pit-band-label">${band.label}</div><div class="pit-band-name">${r.name}</div><div class="pit-band-days">${r.equipment}</div></div>`}).join('');
-
-  const upEl=document.getElementById('dash-upcoming');
-  const upcoming=scheduleEvents.filter(ev=>ev.site===site&&ev.date&&daysUntil(ev.date)>=0).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,4);
-  if(!upcoming.length){upEl.innerHTML='<div class="empty-state">No upcoming sessions scheduled.</div>';}
-  else upEl.innerHTML=upcoming.map(ev=>`<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--gray-100);align-items:flex-start">
-    <div style="background:var(--navy);color:white;border-radius:5px;padding:5px 9px;text-align:center;min-width:40px;flex-shrink:0">
-      <div style="font-size:10px;opacity:0.7">${new Date(ev.date).toLocaleDateString('en-US',{month:'short'})}</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;line-height:1">${new Date(ev.date).getDate()}</div>
-    </div>
-    <div><div style="font-weight:600;font-size:13px">${ev.title}</div><div style="font-size:11px;color:var(--gray-500)">${ev.type==='pit'?'PIT':'Process'} Training${ev.trainer?' · '+ev.trainer:''}</div></div>
-  </div>`).join('');
+function openNewProcForTrainee(name) { /* disabled in ops view */ if(true) return;
+  openModal('modal-process');
+  setTimeout(() => {
+    document.getElementById('proc-name').value = name;
+    const ref = [...pitRecords, ...processRecords].find(r => r.name && r.name.trim() === name);
+    if (ref) {
+      if (ref.hireDate) document.getElementById('proc-hire-date').value = ref.hireDate;
+      if (ref.position) document.getElementById('proc-position').value = ref.position;
+      if (ref.title) document.getElementById('proc-title').value = ref.title;
+      if (ref.supervisor) document.getElementById('proc-supervisor').value = ref.supervisor;
+      if (ref.shift) document.getElementById('proc-shift').value = ref.shift;
+      if (ref.site) document.getElementById('proc-site').value = ref.site;
+    }
+  }, 50);
 }
 
-function renderPitOverview(site) {
-  if(!site) site=document.getElementById('siteFilter').value;
-  const active=getActivePit().filter(r=>r.site===site);
-  const alerts=active.filter(r=>{const d=daysUntil(r.expiry);return d!==null&&d<=90;}).sort((a,b)=>daysUntil(a.expiry)-daysUntil(b.expiry));
+// ===================================================
+// REGIONAL OVERVIEW
+// ===================================================
+function renderRegional() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const thisYear = now.getFullYear();
+  const activeSites = sites.filter(s => s.active);
+  const grid = document.getElementById('regionalGrid');
 
-  const alertEl=document.getElementById('pit-alert-list');
-  if(!alerts.length){alertEl.innerHTML='<div class="empty-state">No expirations within 90 days.</div>';}
-  else alertEl.innerHTML=alerts.map(r=>{const d=daysUntil(r.expiry),band=getExpiryBand(d);return`<div class="pit-band ${band.cls}"><div class="pit-band-label">${band.label}</div><div class="pit-band-name">${r.name}</div><div class="pit-band-days">${r.equipment} · Expires ${fmtDate(r.expiry)}</div></div>`}).join('');
+  if (!activeSites.length) {
+    grid.innerHTML = '<div class="empty-state"><p>No active sites configured.</p></div>';
+    return;
+  }
 
-  const tbody=document.getElementById('pit-ov-body');
-  const searchTerm=document.querySelector('#page-pit-overview input')?.value.toLowerCase()||'';
-  const data=active.filter(r=>!searchTerm||r.name.toLowerCase().includes(searchTerm)||(r.equipment||'').toLowerCase().includes(searchTerm)).sort((a,b)=>(daysUntil(a.expiry)||999)-(daysUntil(b.expiry)||999));
-  if(!data.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:20px">No operators found.</td></tr>';}
-  else tbody.innerHTML=data.map(r=>{const d=daysUntil(r.expiry),band=getExpiryBand(d);return`<tr><td><strong>${r.name}</strong></td><td style="font-size:12px">${r.equipment}</td><td style="font-size:12px">${fmtDate(r.expiry)}</td><td>${band?`<span class="badge ${band.cls.replace('band-','badge-')}" style="font-size:10px">${d<0?'EXPIRED':d+'d'}</span>`:'<span class="badge badge-green">Current</span>'}</td></tr>`}).join('');
+  grid.innerHTML = activeSites.map(s => {
+    const siteName = s.name;
+
+    // PIT latest per operator for this site
+    const latest = {};
+    pitRecords.forEach(r => {
+      if (r.completion !== 'Completed' || r.site !== siteName) return;
+      const key = r.name + '||' + r.equipment;
+      if (!latest[key] || r.certDate > latest[key].certDate) latest[key] = r;
+    });
+    const activePit = Object.values(latest);
+    const expiring90 = activePit.filter(r => { const d = daysUntil(r.expiry); return d !== null && d <= 90; });
+    const expired = activePit.filter(r => { const d = daysUntil(r.expiry); return d !== null && d < 0; });
+
+    const ytdProcess = processRecords.filter(r => r.site === siteName && r.certDate && new Date(r.certDate).getFullYear() === thisYear).length;
+    const upcoming30 = scheduleEvents.filter(ev => {
+      if (ev.site !== siteName || !ev.date) return false;
+      const d = daysUntil(ev.date);
+      return d !== null && d >= 0 && d <= 30;
+    }).length;
+
+    const topAlerts = expiring90.sort((a,b) => daysUntil(a.expiry) - daysUntil(b.expiry)).slice(0,3);
+
+    return `<div class="card" style="padding:0;overflow:hidden;">
+      <div style="background:var(--navy);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:white;">${siteName}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:1px;">${s.location||''} ${s.region ? '· '+s.region : ''}</div>
+        </div>
+        <span class="badge badge-green" style="font-size:10px">Active</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--gray-100);">
+        ${[
+          ['PIT Operators', activePit.length, 'var(--navy)'],
+          ['Expiring ≤90d', expiring90.length, expiring90.length > 0 ? 'var(--orange)' : 'var(--navy)'],
+          ['Expired', expired.length, expired.length > 0 ? 'var(--red)' : 'var(--navy)'],
+          ['Process (YTD)', ytdProcess, 'var(--navy)'],
+        ].map(([label, val, color]) => `
+          <div style="padding:14px 12px;border-right:1px solid var(--gray-100);text-align:center;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--gray-500);margin-bottom:4px;">${label}</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:${color};line-height:1;">${val}</div>
+          </div>`).join('')}
+      </div>
+      <div style="padding:14px 20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--gray-500);margin-bottom:8px;">⚠ Upcoming Expirations</div>
+        ${topAlerts.length ? topAlerts.map(r => {
+          const d = daysUntil(r.expiry);
+          const band = getExpiryBand(d);
+          return `<div class="pit-band ${band.cls}" style="margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div class="pit-band-label">${band.label}</div>
+              <div class="pit-band-name" style="font-size:12px">${r.name} · ${r.equipment}</div>
+            </div>
+            <div style="font-size:11px;opacity:0.7">${fmtDate(r.expiry)}</div>
+          </div>`;
+        }).join('') + (expiring90.length > 3 ? `<div style="font-size:12px;color:var(--gray-500);margin-top:6px;">+${expiring90.length-3} more — <a href="#" onclick="document.getElementById('siteSelect').value='${siteName}';changeSite('${siteName}');showPage('pit-overview');return false;" style="color:var(--navy);font-weight:600;">View all</a></div>` : '')
+        : `<div style="font-size:12px;color:var(--gray-400);padding:6px 0;">No expirations within 90 days.</div>`}
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--gray-500);">📅 ${upcoming30} session${upcoming30!==1?'s':''} scheduled next 30 days</span>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('siteSelect').value='${siteName}';changeSite('${siteName}');showPage('dashboard');">View Dashboard →</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function filterPitOv(val){ renderPitOverview(); }
+// ===================================================
+// INIT
+// ===================================================
+document.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  document.getElementById('topbarDate').textContent = now.toLocaleDateString('en-US', {weekday:'short', month:'long', day:'numeric', year:'numeric'});
+  syncSiteSelects();
+  renderDashboard();
 
-function renderPitRecords() {
-  const site=document.getElementById('siteFilter').value;
-  const search=(document.getElementById('pit-search')?.value||'').toLowerCase();
-  const result=document.getElementById('pit-result-filter')?.value||'';
-  let data=pitRecords.filter(r=>r.site===site&&(!search||r.name.toLowerCase().includes(search)||(r.equipment||'').toLowerCase().includes(search))&&(!result||r.completion===result));
-  const tbody=document.getElementById('pit-rec-body');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--gray-400);padding:20px">No records.</td></tr>';return;}
-  tbody.innerHTML=data.map(r=>`<tr>
-    <td><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--gray-500)">${r.shift||''}</span></td>
-    <td style="font-size:12px">${r.position||'—'}</td>
-    <td>${r.equipment||'—'}</td>
-    <td>${pfBadge(r.classroom)}</td>
-    <td>${pfBadge(r.handson)}</td>
-    <td>${pfBadge(r.oje)}</td>
-    <td>${completionBadge(r.completion)}</td>
-    <td style="font-size:12px">${r.evaluator||'—'}</td>
-    <td style="font-size:12px">${fmtDate(r.certDate)}</td>
-    <td>${expiryBadge(r.expiry)}</td>
-    <td style="font-size:11px">${recertSummaryCell(migrateRecerts(r))}</td>
-  </tr>`).join('');
-}
-
-function renderProcRecords() {
-  const site=document.getElementById('siteFilter').value;
-  const search=(document.getElementById('proc-search')?.value||'').toLowerCase();
-  const result=document.getElementById('proc-result-filter')?.value||'';
-  let data=processRecords.filter(r=>r.site===site&&(!search||r.name.toLowerCase().includes(search)||(r.process||'').toLowerCase().includes(search))&&(!result||r.completion===result));
-  const tbody=document.getElementById('proc-rec-body');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:20px">No records.</td></tr>';return;}
-  tbody.innerHTML=data.map(r=>`<tr>
-    <td><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--gray-500)">${r.shift||''}</span></td>
-    <td style="font-size:12px">${r.position||'—'}</td>
-    <td>${r.process||'—'}</td>
-    <td>${completionBadge(r.completion)}</td>
-    <td style="font-size:12px">${r.evaluator||'—'}</td>
-    <td style="font-size:12px">${fmtDate(r.certDate)}</td>
-  </tr>`).join('');
-}
-
-function renderSchedule(site) {
-  if(!site) site=document.getElementById('siteFilter').value;
-  const now=new Date(); now.setHours(0,0,0,0);
-  const data=scheduleEvents.filter(ev=>ev.site===site&&ev.date&&daysUntil(ev.date)>=0).sort((a,b)=>new Date(a.date)-new Date(b.date));
-  const tbody=document.getElementById('sched-body');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:20px">No upcoming training sessions.</td></tr>';return;}
-  tbody.innerHTML=data.map(ev=>`<tr>
-    <td style="font-size:12px;font-weight:600">${fmtDate(ev.date)}</td>
-    <td style="font-size:12px">${ev.time||'—'}</td>
-    <td><strong>${ev.title}</strong></td>
-    <td><span class="badge ${ev.type==='pit'?'badge-navy':'badge-green'}">${ev.type==='pit'?'PIT':'Process'}</span></td>
-    <td style="font-size:12px">${ev.site}</td>
-    <td style="font-size:12px">${ev.trainer||'—'}</td>
-    <td style="font-size:12px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ev.notes||'—'}</td>
-  </tr>`).join('');
-}
-
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
-  renderAll(); // render from cache immediately
-  db.ref('.info/connected').on('value', snap=>{
-    const connected = snap.val()===true;
-    const dot=document.getElementById('fbDot');
-    if(dot){ dot.style.background=connected?'#1a7a3c':'#C8102E'; dot.title=connected?'Firebase Connected':'Offline'; }
-    if(connected && !window._fbSub){ window._fbSub=true; subscribeFirebase(); }
+  // Firebase connection state monitor
+  db.ref('.info/connected').on('value', snap => {
+    const connected = snap.val() === true;
+    setFbStatus(connected, null);
+    if (connected && !window._fbSubscribed) {
+      window._fbSubscribed = true;
+      subscribeFirebase();
+    }
   });
 });
 </script>
