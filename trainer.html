@@ -869,10 +869,6 @@ body.ops-mode [data-trainer-only] { display: none !important; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       Sites
     </div>
-    <div class="nav-item" onclick="showPage('admin-firebase')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-      Firebase Config
-    </div>
   </div>
 
   <div class="sidebar-footer">
@@ -887,7 +883,7 @@ body.ops-mode [data-trainer-only] { display: none !important; }
     <div class="topbar-title" id="topbarTitle">Dashboard</div>
     <div style="display:flex;align-items:center;gap:12px;">
       <span style="font-size:13px;color:var(--gray-500)" id="topbarDate"></span>
-      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--gray-500);background:var(--gray-100);padding:4px 10px;border-radius:20px;cursor:pointer" onclick="showPage('admin-firebase')" title="Firebase connection status">
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--gray-500);background:var(--gray-100);padding:4px 10px;border-radius:20px;" title="Firebase connection status">
         <span id="fbDot" style="width:7px;height:7px;border-radius:50%;background:#adb5bd;display:inline-block;flex-shrink:0"></span>
         <span id="fbLabel">Connecting…</span>
       </div>
@@ -1248,50 +1244,6 @@ body.ops-mode [data-trainer-only] { display: none !important; }
             <thead><tr><th>Site Name</th><th>Location</th><th>Region</th><th>Active</th><th>Actions</th></tr></thead>
             <tbody id="siteBody"></tbody>
           </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== ADMIN: FIREBASE ===== -->
-    <div id="page-admin-firebase" class="page">
-      <div class="page-header">
-        <div><h1>Firebase Connection</h1><p>Live sync status for this LMS</p></div>
-      </div>
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-title">Connection Status</div>
-          <div style="display:flex;flex-direction:column;gap:16px">
-            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200)">
-              <span id="fbDot2" style="width:12px;height:12px;border-radius:50%;background:#adb5bd;flex-shrink:0;display:inline-block"></span>
-              <div>
-                <div id="fbStatus" style="font-size:13.5px;font-weight:600;color:var(--gray-700)">Connecting…</div>
-                <div style="font-size:12px;color:var(--gray-500);margin-top:2px">training-636e4-default-rtdb.firebaseio.com</div>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
-              <div style="background:var(--gray-50);border-radius:5px;padding:10px 12px"><span style="color:var(--gray-500);display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:3px">Project ID</span>training-636e4</div>
-              <div style="background:var(--gray-50);border-radius:5px;padding:10px 12px"><span style="color:var(--gray-500);display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:3px">Region</span>us-central1</div>
-              <div style="background:var(--gray-50);border-radius:5px;padding:10px 12px"><span style="color:var(--gray-500);display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:3px">PIT Records</span><span id="fbCountPit">—</span></div>
-              <div style="background:var(--gray-50);border-radius:5px;padding:10px 12px"><span style="color:var(--gray-500);display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:3px">Process Records</span><span id="fbCountProc">—</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Database Structure</div>
-          <div style="font-size:13.5px;color:var(--gray-600);line-height:1.7">
-            <p style="margin-bottom:10px">All training records sync automatically to Firebase Realtime Database on every save. Data is also cached in localStorage so the tool works offline and loads instantly.</p>
-            <p style="margin-bottom:10px">OSHA requires PIT training records to be kept for <strong>3 years</strong>. PIT license recertification is required every <strong>2 years</strong>.</p>
-            <div style="background:var(--gray-100);border-radius:5px;padding:12px;font-family:monospace;font-size:12px;color:var(--gray-700)">
-              /lms/<br>
-              &nbsp;&nbsp;/pit/<br>
-              &nbsp;&nbsp;/process/<br>
-              &nbsp;&nbsp;/schedule/<br>
-              &nbsp;&nbsp;/equipment/<br>
-              &nbsp;&nbsp;/processes/<br>
-              &nbsp;&nbsp;/sites/
-            </div>
-            <p style="margin-top:10px;font-size:12px;color:var(--gray-500)">Firebase Console: <a href="https://console.firebase.google.com/project/training-636e4/database" target="_blank" style="color:var(--navy)">console.firebase.google.com</a></p>
-          </div>
         </div>
       </div>
     </div>
@@ -1854,12 +1806,8 @@ function setFbStatus(connected, detail) {
   fbConnected = connected;
   const dot   = document.getElementById('fbDot');
   const label = document.getElementById('fbLabel');
-  const adminStatus = document.getElementById('fbStatus');
-  if (dot)   dot.style.background   = connected ? '#1a7a3c' : '#C8102E';
-  if (label) label.textContent       = connected ? 'Firebase Connected' : 'Offline — Local Only';
-  if (adminStatus) adminStatus.innerHTML = connected
-    ? `<span style="color:var(--green)">✓ Connected to Firebase — training-636e4</span>`
-    : `<span style="color:var(--red)">✗ Not connected${detail ? ': '+detail : ''}</span>`;
+  if (dot)   dot.style.background = connected ? '#1a7a3c' : '#C8102E';
+  if (label) label.textContent    = connected ? 'Firebase Connected' : 'Offline — Local Only';
 }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,6); }
@@ -1878,7 +1826,6 @@ const pageTitles = {
   'admin-equipment': 'Equipment Types',
   'admin-processes': 'Processes',
   'admin-sites': 'Sites',
-  'admin-firebase': 'Firebase Configuration'
 };
 
 function showPage(id) {
@@ -1898,7 +1845,6 @@ function showPage(id) {
   if (id === 'admin-equipment') renderEquipment();
   if (id === 'admin-processes') renderProcessAdmin();
   if (id === 'admin-sites') renderSites();
-  if (id === 'admin-firebase') updateFbAdminCounts();
 }
 
 // ===================================================
@@ -2837,17 +2783,6 @@ function clearSchedForm() {
 // ===================================================
 // FIREBASE ADMIN STATUS HELPERS
 // ===================================================
-function updateFbAdminCounts() {
-  const p = document.getElementById('fbCountPit');
-  const r = document.getElementById('fbCountProc');
-  if (p) p.textContent = pitRecords.length;
-  if (r) r.textContent = processRecords.length;
-  // keep fbDot2 in sync with main fbDot
-  const d2 = document.getElementById('fbDot2');
-  const d1 = document.getElementById('fbDot');
-  if (d2 && d1) d2.style.background = d1.style.background;
-}
-
 // ===================================================
 // HELPERS / FORMATTERS
 // ===================================================
