@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEVA Millington — Training Records (Operations View)</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root {
+  --navy: #00204E; --navy-light: #002f6c; --red: #C8102E;
+  --white: #ffffff; --gray-50: #f8f9fb; --gray-100: #f0f2f5;
+  --gray-200: #e2e6ea; --gray-300: #ced4da; --gray-400: #adb5bd;
+  --gray-500: #6c757d; --gray-600: #495057; --gray-700: #343a40;
+  --gray-800: #212529; --green: #1a7a3c; --green-light: #e8f5ee;
+  --orange: #e07b00; --orange-light: #fff3e0; --yellow: #c49a00;
+  --yellow-light: #fffde7; --red-light-bg: #fdecea;
+  --sidebar-width: 220px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Barlow',sans-serif; background:var(--gray-100); color:var(--gray-800); display:flex; min-height:100vh; }
+
+#ops-bar { background:var(--orange); color:white; text-align:center; padding:6px; font-size:12px; font-weight:700; letter-spacing:0.5px; position:fixed; top:0; left:0; right:0; z-index:999; }
+body { padding-top:32px; }
+
+#sidebar { width:var(--sidebar-width); background:var(--navy); display:flex; flex-direction:column; position:fixed; top:32px; left:0; bottom:0; z-index:100; overflow-y:auto; }
+.sidebar-logo { padding:16px 18px 14px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; }
+.sidebar-logo img { height:34px; width:auto; max-width:170px; filter:brightness(0) invert(1); display:block; }
+.sidebar-site { padding:8px 18px 12px; border-bottom:1px solid rgba(255,255,255,0.1); }
+.sidebar-site label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); display:block; margin-bottom:4px; }
+.sidebar-site select { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:white; font-family:'Barlow',sans-serif; font-size:13px; padding:5px 8px; border-radius:4px; width:100%; }
+.sidebar-site select option { background:var(--navy); }
+.nav-section { padding:10px 0 4px; }
+.nav-section-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.35); padding:0 18px 6px; font-family:'Barlow Condensed',sans-serif; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:9px 18px; color:rgba(255,255,255,0.7); cursor:pointer; font-size:13px; font-weight:500; transition:all 0.15s; border-left:3px solid transparent; }
+.nav-item:hover { background:rgba(255,255,255,0.07); color:white; }
+.nav-item.active { background:rgba(255,255,255,0.1); color:white; border-left-color:var(--red); }
+.nav-item svg { width:15px; height:15px; flex-shrink:0; }
+.sidebar-footer { margin-top:auto; padding:12px 18px; border-top:1px solid rgba(255,255,255,0.1); font-size:11px; color:rgba(255,255,255,0.35); }
+
+#main { margin-left:var(--sidebar-width); flex:1; display:flex; flex-direction:column; }
+#topbar { height:60px; background:white; border-bottom:1px solid var(--gray-200); display:flex; align-items:center; justify-content:space-between; padding:0 24px; position:sticky; top:32px; z-index:50; }
+.topbar-title { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:600; color:var(--navy); }
+.topbar-role { background:var(--orange); color:white; font-size:11px; font-weight:700; padding:3px 10px; border-radius:3px; letter-spacing:0.5px; text-transform:uppercase; font-family:'Barlow Condensed',sans-serif; }
+
+#content { padding:24px; flex:1; }
+.page { display:none; }
+.page.active { display:block; }
+.page-header { margin-bottom:22px; }
+.page-header h1 { font-family:'Barlow Condensed',sans-serif; font-size:24px; font-weight:600; color:var(--navy); }
+.page-header p { font-size:13px; color:var(--gray-500); margin-top:2px; }
+
+.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+.kpi-card { background:white; border-radius:8px; border:1px solid var(--gray-200); padding:14px 18px; }
+.kpi-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:var(--gray-500); margin-bottom:5px; }
+.kpi-value { font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:700; color:var(--navy); line-height:1; }
+.kpi-sub { font-size:11px; color:var(--gray-500); margin-top:3px; }
+
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.card { background:white; border-radius:8px; border:1px solid var(--gray-200); padding:18px 22px; }
+.card-title { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:600; color:var(--navy); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead th { background:var(--gray-50); padding:9px 12px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.7px; color:var(--gray-500); border-bottom:1px solid var(--gray-200); white-space:nowrap; }
+tbody td { padding:10px 12px; border-bottom:1px solid var(--gray-100); vertical-align:middle; color:var(--gray-700); }
+tbody tr:hover { background:var(--gray-50); }
+tbody tr:last-child td { border-bottom:none; }
+
+.badge { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:3px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+.badge-green { background:var(--green-light); color:var(--green); }
+.badge-red { background:var(--red-light-bg); color:#9b1221; }
+.badge-orange { background:var(--orange-light); color:var(--orange); }
+.badge-yellow { background:var(--yellow-light); color:var(--yellow); }
+.badge-navy { background:#e8eef5; color:var(--navy); }
+.badge-gray { background:var(--gray-100); color:var(--gray-600); }
+
+.filter-bar { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.filter-bar input, .filter-bar select { padding:6px 10px; border:1.5px solid var(--gray-300); border-radius:5px; font-family:'Barlow',sans-serif; font-size:13px; color:var(--gray-700); background:white; }
+.filter-bar input:focus, .filter-bar select:focus { outline:none; border-color:var(--navy); }
+.filter-bar input { min-width:200px; }
+
+.pit-band { padding:10px 12px; border-radius:6px; margin-bottom:6px; }
+.pit-band-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px; }
+.pit-band-name { font-size:13px; font-weight:500; }
+.pit-band-days { font-size:11px; margin-top:1px; opacity:0.75; }
+.band-critical { background:#fdecea; border-left:4px solid #c0392b; }
+.band-critical .pit-band-label { color:#9b1221; }
+.band-urgent { background:#fff3e0; border-left:4px solid #e07b00; }
+.band-urgent .pit-band-label { color:var(--orange); }
+.band-warning { background:#fffde7; border-left:4px solid #c49a00; }
+.band-warning .pit-band-label { color:var(--yellow); }
+.band-notice { background:#e3ecf7; border-left:4px solid var(--navy); }
+.band-notice .pit-band-label { color:var(--navy); }
+
+.empty-state { text-align:center; padding:32px 20px; color:var(--gray-400); font-size:13px; }
+.tabs { display:flex; gap:0; border-bottom:2px solid var(--gray-200); margin-bottom:18px; }
+.tab-btn { padding:7px 16px; font-family:'Barlow',sans-serif; font-size:13px; font-weight:600; color:var(--gray-500); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; margin-bottom:-2px; transition:all 0.15s; }
+.tab-btn.active { color:var(--navy); border-bottom-color:var(--red); }
+.tab-btn:hover:not(.active) { color:var(--gray-700); }
+
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-thumb { background:var(--gray-300); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div id="ops-bar">⚠ OPERATIONS VIEW — Read Only. Contact a Trainer to make changes to training records.</div>
+
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://www.freelogovectors.net/wp-content/uploads/2022/07/ceva-logistics-logo-freelogovectors.net_.png" alt="CEVA Logistics">
+  </div>
+  <div class="sidebar-site">
+    <label>Site</label>
+    <select id="siteFilter" onchange="renderAll()">
+      <option value="Millington">Millington</option>
+    </select>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">PIT Training</div>
+    <div class="nav-item" onclick="showPage('pit-overview')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l1-5h12l1 5"/><rect x="3" y="8" width="18" height="8" rx="1"/><path d="M6 16v4"/><path d="M18 16v4"/></svg>
+      PIT Overview
+    </div>
+    <div class="nav-item" onclick="showPage('pit-records')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      PIT Records
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Process Training</div>
+    <div class="nav-item" onclick="showPage('process-records')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Process Records
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Schedule</div>
+    <div class="nav-item" onclick="showPage('schedule')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Upcoming Training
+    </div>
+  </div>
+  <div class="sidebar-footer">CEVA Logistics · Operations View</div>
+</nav>
+
+<div id="main">
+  <div id="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:12px;color:var(--gray-500)" id="topbarDate"></span>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--gray-500);background:var(--gray-100);padding:4px 10px;border-radius:20px" title="Firebase connection status">
+        <span id="fbDot" style="width:7px;height:7px;border-radius:50%;background:#adb5bd;display:inline-block;flex-shrink:0"></span>
+        <span>Live Sync</span>
+      </div>
+      <span class="topbar-role">Operations</span>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <h1>Training Dashboard</h1>
+        <p>Live training status for <span id="siteLabel">Millington</span></p>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">PIT Operators</div><div class="kpi-value" id="k-pit">—</div><div class="kpi-sub">Active certifications</div></div>
+        <div class="kpi-card"><div class="kpi-label">Expiring ≤ 90 Days</div><div class="kpi-value" id="k-exp" style="color:var(--red)">—</div><div class="kpi-sub">Licenses requiring action</div></div>
+        <div class="kpi-card"><div class="kpi-label">Process Records (YTD)</div><div class="kpi-value" id="k-proc">—</div><div class="kpi-sub">Sessions logged this year</div></div>
+        <div class="kpi-card"><div class="kpi-label">Scheduled (30 Days)</div><div class="kpi-value" id="k-sched">—</div><div class="kpi-sub">Upcoming training events</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">⚠ PIT Expirations</div>
+          <div id="dash-alerts"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Upcoming Training Sessions</div>
+          <div id="dash-upcoming"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PIT OVERVIEW -->
+    <div id="page-pit-overview" class="page">
+      <div class="page-header">
+        <h1>PIT Operator Overview</h1>
+        <p>License expiration status for all certified operators</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title" style="color:var(--red)">Expiring Within 90 Days</div>
+          <div id="pit-alert-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">All Active Operators</div>
+          <div class="filter-bar">
+            <input type="text" placeholder="Search operator…" oninput="filterPitOv(this.value)">
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Operator</th><th>Equipment</th><th>Expiry</th><th>Status</th></tr></thead>
+            <tbody id="pit-ov-body"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PIT RECORDS -->
+    <div id="page-pit-records" class="page">
+      <div class="page-header">
+        <h1>PIT Training Records</h1>
+        <p>All powered industrial truck certifications on file</p>
+      </div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="filter-bar" style="margin-bottom:0">
+          <input type="text" placeholder="Search name, equipment…" id="pit-search" oninput="renderPitRecords()">
+          <select id="pit-result-filter" onchange="renderPitRecords()">
+            <option value="">All Results</option>
+            <option value="Completed">Completed</option>
+            <option value="Incomplete">Incomplete</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Trainee</th><th>Position</th><th>Equipment</th><th>Classroom</th><th>Hands-On</th><th>OJE</th><th>Overall</th><th>Evaluator</th><th>Cert Date</th><th>Expiry</th><th>Recertification</th>
+          </tr></thead>
+          <tbody id="pit-rec-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROCESS RECORDS -->
+    <div id="page-process-records" class="page">
+      <div class="page-header">
+        <h1>Process Training Records</h1>
+        <p>All warehouse process training completions on file</p>
+      </div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="filter-bar" style="margin-bottom:0">
+          <input type="text" placeholder="Search name, process…" id="proc-search" oninput="renderProcRecords()">
+          <select id="proc-result-filter" onchange="renderProcRecords()">
+            <option value="">All Results</option>
+            <option value="Completed">Completed</option>
+            <option value="Incomplete">Incomplete</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Trainee</th><th>Position</th><th>Process</th><th>Result</th><th>Evaluator</th><th>Date Certified</th>
+          </tr></thead>
+          <tbody id="proc-rec-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div id="page-schedule" class="page">
+      <div class="page-header">
+        <h1>Upcoming Training Sessions</h1>
+        <p>Scheduled training for the next 90 days — contact a Trainer to make changes</p>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table><thead><tr><th>Date</th><th>Time</th><th>Title</th><th>Type</th><th>Site</th><th>Trainer</th><th>Notes</th></tr></thead>
+          <tbody id="sched-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ===================================================
+// FIREBASE — Operations (Read-Only)
+// ===================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyD-xCtjk2g-AVhH4jgJVrXseG8iwNo9uoQ",
+  authDomain: "training-636e4.firebaseapp.com",
+  databaseURL: "https://training-636e4-default-rtdb.firebaseio.com",
+  projectId: "training-636e4",
+  storageBucket: "training-636e4.firebasestorage.app",
+  messagingSenderId: "594818231743",
+  appId: "1:594818231743:web:41e9576084a99627f7050a",
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const Cache = {
+  get:(k,d)=>{ try{const v=localStorage.getItem('lms_'+k);return v?JSON.parse(v):d;}catch(e){return d;} },
+  set:(k,v)=>{ try{localStorage.setItem('lms_'+k,JSON.stringify(v));}catch(e){} },
+};
+
+let pitRecords=Cache.get('pit',[]);
+let processRecords=Cache.get('process',[]);
+let scheduleEvents=Cache.get('schedule',[]);
+
+function objToArr(obj){ if(!obj) return []; return Object.values(obj); }
+
+function subscribeFirebase(){
+  db.ref('lms').on('value', snap=>{
+    const data=snap.val();
+    if(!data) return;
+    if(data.pit)      { pitRecords=objToArr(data.pit);       Cache.set('pit',pitRecords); }
+    if(data.process)  { processRecords=objToArr(data.process); Cache.set('process',processRecords); }
+    if(data.schedule) { scheduleEvents=objToArr(data.schedule); Cache.set('schedule',scheduleEvents); }
+    renderAll();
+    const dot=document.getElementById('fbDot');
+    if(dot){ dot.style.background='#1a7a3c'; dot.title='Firebase Connected'; }
+  }, ()=>{
+    const dot=document.getElementById('fbDot');
+    if(dot){ dot.style.background='#C8102E'; dot.title='Offline — using cached data'; }
+  });
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelector(`.nav-item[onclick="showPage('${id}')"]`)?.classList.add('active');
+  const titles={dashboard:'Dashboard','pit-overview':'PIT Operator Overview','pit-records':'PIT Training Records','process-records':'Process Training Records',schedule:'Upcoming Training'};
+  document.getElementById('topbarTitle').textContent = titles[id]||id;
+  renderAll();
+}
+
+function daysUntil(str) {
+  if(!str) return null;
+  const now=new Date(); now.setHours(0,0,0,0);
+  const exp=new Date(str); exp.setHours(0,0,0,0);
+  return Math.round((exp-now)/86400000);
+}
+
+function getExpiryBand(d) {
+  if(d===null) return null;
+  if(d<=3) return {label:(d<0?'EXPIRED':'CRITICAL — '+d+' day'+(d===1?'':'s')),cls:'band-critical'};
+  if(d<=10) return {label:'URGENT — '+d+' days',cls:'band-urgent'};
+  if(d<=30) return {label:'WARNING — '+d+' days',cls:'band-warning'};
+  if(d<=60) return {label:'NOTICE — '+d+' days',cls:'band-warning'};
+  if(d<=90) return {label:'UPCOMING — '+d+' days',cls:'band-notice'};
+  return null;
+}
+
+function migrateRecerts(r) {
+  if (Array.isArray(r.recertifications)) return r.recertifications;
+  if (r.recertReason) return [{reason:r.recertReason, date:r.recertDate||'', notes:r.recertNotes||''}];
+  return [];
+}
+function recertSummaryCell(recerts) {
+  if (!recerts.length) return '—';
+  const latest = recerts.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+  return `<span class="badge badge-orange" style="font-size:10px;text-transform:none;letter-spacing:0;white-space:nowrap;display:inline-block;margin-bottom:2px">${latest.reason||'Recertification'}</span><br><span style="color:var(--gray-500)">${fmtDate(latest.date)}</span>${recerts.length>1?`<br><span style="color:var(--gray-400);font-size:10px">+${recerts.length-1} more</span>`:''}`;
+}
+function fmtDate(str) {
+  if(!str) return '—';
+  const d=new Date(str+'T00:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+function pfBadge(v) {
+  if(!v) return '<span style="color:#adb5bd;font-size:12px">—</span>';
+  return v==='Pass'?'<span class="badge badge-green">Pass</span>':'<span class="badge badge-red">Fail</span>';
+}
+
+function completionBadge(v) {
+  if(!v) return '—';
+  return v==='Completed'?'<span class="badge badge-green">Completed</span>':'<span class="badge badge-red">Incomplete</span>';
+}
+
+function expiryBadge(str) {
+  if(!str) return '—';
+  const d=daysUntil(str);
+  let color='var(--gray-700)';
+  if(d!==null){ if(d<0) color='#9b1221'; else if(d<=30) color='var(--red)'; else if(d<=90) color='var(--orange)'; }
+  return `<span style="color:${color};font-weight:${d!==null&&d<=90?'700':'400'}">${fmtDate(str)}${d!==null&&d<0?' <strong>(EXPIRED)</strong>':''}</span>`;
+}
+
+function getActivePit() {
+  const latest={};
+  pitRecords.forEach(r=>{
+    if(r.completion!=='Completed') return;
+    const key=r.name+'||'+r.equipment;
+    if(!latest[key]||r.certDate>latest[key].certDate) latest[key]=r;
+  });
+  return Object.values(latest);
+}
+
+function renderAll() {
+  const site = document.getElementById('siteFilter').value;
+  document.getElementById('siteLabel').textContent = site;
+  renderDashboard(site);
+  renderPitOverview(site);
+  renderPitRecords();
+  renderProcRecords();
+  renderSchedule(site);
+}
+
+function renderDashboard(site) {
+  const now=new Date(); now.setHours(0,0,0,0);
+  const yr=now.getFullYear();
+  const active=getActivePit().filter(r=>r.site===site);
+  const exp90=active.filter(r=>{const d=daysUntil(r.expiry);return d!==null&&d<=90;});
+  const ytd=processRecords.filter(r=>r.site===site&&r.certDate&&new Date(r.certDate).getFullYear()===yr).length;
+  const upcoming30=scheduleEvents.filter(ev=>{
+    if(ev.site!==site||!ev.date) return false;
+    const d=daysUntil(ev.date);
+    return d!==null&&d>=0&&d<=30;
+  }).length;
+
+  document.getElementById('k-pit').textContent=active.length;
+  document.getElementById('k-exp').textContent=exp90.length;
+  document.getElementById('k-proc').textContent=ytd;
+  document.getElementById('k-sched').textContent=upcoming30;
+
+  const alertEl=document.getElementById('dash-alerts');
+  const alerts=exp90.sort((a,b)=>daysUntil(a.expiry)-daysUntil(b.expiry)).slice(0,5);
+  if(!alerts.length){alertEl.innerHTML='<div class="empty-state">No expiration alerts.</div>';}
+  else alertEl.innerHTML=alerts.map(r=>{const d=daysUntil(r.expiry),band=getExpiryBand(d);return`<div class="pit-band ${band.cls}"><div class="pit-band-label">${band.label}</div><div class="pit-band-name">${r.name}</div><div class="pit-band-days">${r.equipment}</div></div>`}).join('');
+
+  const upEl=document.getElementById('dash-upcoming');
+  const upcoming=scheduleEvents.filter(ev=>ev.site===site&&ev.date&&daysUntil(ev.date)>=0).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,4);
+  if(!upcoming.length){upEl.innerHTML='<div class="empty-state">No upcoming sessions scheduled.</div>';}
+  else upEl.innerHTML=upcoming.map(ev=>`<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--gray-100);align-items:flex-start">
+    <div style="background:var(--navy);color:white;border-radius:5px;padding:5px 9px;text-align:center;min-width:40px;flex-shrink:0">
+      <div style="font-size:10px;opacity:0.7">${new Date(ev.date).toLocaleDateString('en-US',{month:'short'})}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;line-height:1">${new Date(ev.date).getDate()}</div>
+    </div>
+    <div><div style="font-weight:600;font-size:13px">${ev.title}</div><div style="font-size:11px;color:var(--gray-500)">${ev.type==='pit'?'PIT':'Process'} Training${ev.trainer?' · '+ev.trainer:''}</div></div>
+  </div>`).join('');
+}
+
+function renderPitOverview(site) {
+  if(!site) site=document.getElementById('siteFilter').value;
+  const active=getActivePit().filter(r=>r.site===site);
+  const alerts=active.filter(r=>{const d=daysUntil(r.expiry);return d!==null&&d<=90;}).sort((a,b)=>daysUntil(a.expiry)-daysUntil(b.expiry));
+
+  const alertEl=document.getElementById('pit-alert-list');
+  if(!alerts.length){alertEl.innerHTML='<div class="empty-state">No expirations within 90 days.</div>';}
+  else alertEl.innerHTML=alerts.map(r=>{const d=daysUntil(r.expiry),band=getExpiryBand(d);return`<div class="pit-band ${band.cls}"><div class="pit-band-label">${band.label}</div><div class="pit-band-name">${r.name}</div><div class="pit-band-days">${r.equipment} · Expires ${fmtDate(r.expiry)}</div></div>`}).join('');
+
+  const tbody=document.getElementById('pit-ov-body');
+  const searchTerm=document.querySelector('#page-pit-overview input')?.value.toLowerCase()||'';
+  const data=active.filter(r=>!searchTerm||r.name.toLowerCase().includes(searchTerm)||(r.equipment||'').toLowerCase().includes(searchTerm)).sort((a,b)=>(daysUntil(a.expiry)||999)-(daysUntil(b.expiry)||999));
+  if(!data.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:20px">No operators found.</td></tr>';}
+  else tbody.innerHTML=data.map(r=>{const d=daysUntil(r.expiry),band=getExpiryBand(d);return`<tr><td><strong>${r.name}</strong></td><td style="font-size:12px">${r.equipment}</td><td style="font-size:12px">${fmtDate(r.expiry)}</td><td>${band?`<span class="badge ${band.cls.replace('band-','badge-')}" style="font-size:10px">${d<0?'EXPIRED':d+'d'}</span>`:'<span class="badge badge-green">Current</span>'}</td></tr>`}).join('');
+}
+
+function filterPitOv(val){ renderPitOverview(); }
+
+function renderPitRecords() {
+  const site=document.getElementById('siteFilter').value;
+  const search=(document.getElementById('pit-search')?.value||'').toLowerCase();
+  const result=document.getElementById('pit-result-filter')?.value||'';
+  let data=pitRecords.filter(r=>r.site===site&&(!search||r.name.toLowerCase().includes(search)||(r.equipment||'').toLowerCase().includes(search))&&(!result||r.completion===result));
+  const tbody=document.getElementById('pit-rec-body');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--gray-400);padding:20px">No records.</td></tr>';return;}
+  tbody.innerHTML=data.map(r=>`<tr>
+    <td><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--gray-500)">${r.shift||''}</span></td>
+    <td style="font-size:12px">${r.position||'—'}</td>
+    <td>${r.equipment||'—'}</td>
+    <td>${pfBadge(r.classroom)}</td>
+    <td>${pfBadge(r.handson)}</td>
+    <td>${pfBadge(r.oje)}</td>
+    <td>${completionBadge(r.completion)}</td>
+    <td style="font-size:12px">${r.evaluator||'—'}</td>
+    <td style="font-size:12px">${fmtDate(r.certDate)}</td>
+    <td>${expiryBadge(r.expiry)}</td>
+    <td style="font-size:11px">${recertSummaryCell(migrateRecerts(r))}</td>
+  </tr>`).join('');
+}
+
+function renderProcRecords() {
+  const site=document.getElementById('siteFilter').value;
+  const search=(document.getElementById('proc-search')?.value||'').toLowerCase();
+  const result=document.getElementById('proc-result-filter')?.value||'';
+  let data=processRecords.filter(r=>r.site===site&&(!search||r.name.toLowerCase().includes(search)||(r.process||'').toLowerCase().includes(search))&&(!result||r.completion===result));
+  const tbody=document.getElementById('proc-rec-body');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:20px">No records.</td></tr>';return;}
+  tbody.innerHTML=data.map(r=>`<tr>
+    <td><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--gray-500)">${r.shift||''}</span></td>
+    <td style="font-size:12px">${r.position||'—'}</td>
+    <td>${r.process||'—'}</td>
+    <td>${completionBadge(r.completion)}</td>
+    <td style="font-size:12px">${r.evaluator||'—'}</td>
+    <td style="font-size:12px">${fmtDate(r.certDate)}</td>
+  </tr>`).join('');
+}
+
+function renderSchedule(site) {
+  if(!site) site=document.getElementById('siteFilter').value;
+  const now=new Date(); now.setHours(0,0,0,0);
+  const data=scheduleEvents.filter(ev=>ev.site===site&&ev.date&&daysUntil(ev.date)>=0).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const tbody=document.getElementById('sched-body');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:20px">No upcoming training sessions.</td></tr>';return;}
+  tbody.innerHTML=data.map(ev=>`<tr>
+    <td style="font-size:12px;font-weight:600">${fmtDate(ev.date)}</td>
+    <td style="font-size:12px">${ev.time||'—'}</td>
+    <td><strong>${ev.title}</strong></td>
+    <td><span class="badge ${ev.type==='pit'?'badge-navy':'badge-green'}">${ev.type==='pit'?'PIT':'Process'}</span></td>
+    <td style="font-size:12px">${ev.site}</td>
+    <td style="font-size:12px">${ev.trainer||'—'}</td>
+    <td style="font-size:12px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ev.notes||'—'}</td>
+  </tr>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
+  renderAll(); // render from cache immediately
+  db.ref('.info/connected').on('value', snap=>{
+    const connected = snap.val()===true;
+    const dot=document.getElementById('fbDot');
+    if(dot){ dot.style.background=connected?'#1a7a3c':'#C8102E'; dot.title=connected?'Firebase Connected':'Offline'; }
+    if(connected && !window._fbSub){ window._fbSub=true; subscribeFirebase(); }
+  });
+});
+</script>
+</body>
+</html>
